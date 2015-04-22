@@ -11,6 +11,8 @@
 #define PORT 						     "/dev/ttyUSB0"
 #define ACK_INPUT_MSG_SIZE				 8
 
+#define CONTROLLER_ADDRESS_PORT 		 "/dev/input/js0"
+
 #define READ_POSITION_AcX					 1
 #define READ_POSITION_AcY					 2
 #define READ_POSITION_AcZ					 3
@@ -67,6 +69,7 @@ speed_t BAUDRATE 	    				= B9600;
 
 /*Xenomai Tasks*/
 RT_TASK  apc220_read_task;
+RT_TASK  controller_read_task;
 RT_TASK  apc220_check_read_alive_task;
 
 
@@ -77,6 +80,14 @@ union UN_Byte_float_transformation
 	 char  header[4];
 }  ;
 
+
+//struct js_event
+//{
+ // unsigned int 	time;      /* event timestamp in milliseconds */
+ // short 		value;   /* value */
+ // unsigned char type;     /* event type */
+ // unsigned char number;   /* axis/button number */
+//};
 
 
 typedef struct  {
@@ -100,7 +111,9 @@ typedef struct  {
 struct  termios  portSettings;
 
 /*local functions*/
+int  sendToXplane(ST_apc220_inputVectors inputVectors);
 void apc220_check_read_alive_task_func(void *arg);
+void controller_read_task_func(void *arg);
 void apc220_read_task_func(void *arg);
 int  open_port(void);
 int  apc220_comm_init();

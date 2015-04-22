@@ -13,16 +13,23 @@
 
 /*global variables*/
 
-int 	fd			    = 0;
-
+int 	apcFd			= 0;
+int     controllerFd	= 0;
 int     loopCompleted   = 0;
+int     sendToXplaneCounter = 0;
 bool    PANIC_MESSAGE   = false;
-int udpWriteSocket	= 0;
-struct sockaddr_in xplaneWriteAddress;
-socklen_t addr_size;
 
-ST_alivetasks   aliveTasks;
-ST_apc220_inputVectors inputVectors;
+
+
+int udpWriteSocket		= 0;
+struct sockaddr_in 		xplaneWriteAddress;
+socklen_t 				addr_size;
+
+
+
+ST_alivetasks  		 	aliveTasks;
+ST_apc220_inputVectors  inputVectors;
+//struct js_event 		jse;
 
 /*******************************************************************************
  * Type         : ...
@@ -35,7 +42,7 @@ ST_apc220_inputVectors inputVectors;
  * Features     : ...
  *
  ******************************************************************************/
-int xplane_write_task_func(ST_apc220_inputVectors inputVectors)
+int sendToXplane(ST_apc220_inputVectors inputVectors)
 {
 
     int returnValue;
@@ -148,7 +155,7 @@ int xplane_write_task_func(ST_apc220_inputVectors inputVectors)
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+2]=data.byteValue[2];
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+3]=data.byteValue[3];
 
-
+					 fprintf(stderr,"%d\n", sendToXplaneCounter++);
 
 		  sendto(udpWriteSocket,buffer,BUFFERSIZE,0,(struct sockaddr *)&xplaneWriteAddress,addr_size);
 		  tcflush(udpWriteSocket,TCIOFLUSH);
@@ -157,7 +164,7 @@ int xplane_write_task_func(ST_apc220_inputVectors inputVectors)
 
 
 }
-/* (END) XPLANE_WRITE_TASK_FUNC*/
+/* (END) SEND_TO_XPLANE*/
 
 
 
@@ -220,6 +227,108 @@ void apc220_check_read_alive_task_func(void *arg)
  * Features     : ...
  *
  ******************************************************************************/
+void controller_read_task_func(void *arg)
+{
+	int 	returnValue;
+	int 	connectionAttempts;
+	int 	controllerBytesRead;
+	struct 	js_event jse;
+	int 	*axis;
+	int 	num_of_axis;
+	int 	num_of_buttons;
+	char 	name_of_controller[80];
+
+	/*init values*/
+	returnValue		      = RETURN_ERROR;
+	connectionAttempts    = 0;
+	controllerBytesRead   = 0;
+	axis				  = NULL;
+    num_of_axis			  = 0;
+	num_of_buttons		  = 0;
+	name_of_controller[0]   = '\0';
+
+
+	  while (connectionAttempts < MAX_CONNECTION_ATTEMPTS && returnValue == RETURN_ERROR)
+	   {
+		/*Open Port */
+		  controllerFd = open (CONTROLLER_ADDRESS_PORT, O_RDONLY);
+		  fprintf(stderr,"Open Controller port: OK.\n");
+		 if(controllerFd>=0)
+		 {
+			 /*Configure settings in address struct*/
+			 ioctl( controllerFd, JSIOCGAXES, &num_of_axis );
+			 ioctl( controllerFd, JSIOCGBUTTONS, &num_of_buttons );
+			 ioctl( controllerFd, JSIOCGNAME(80), &name_of_controller );
+			 axis = (int *) calloc( num_of_axis, sizeof( int ) );
+
+			 returnValue = RETURN_OK;
+		 }
+		 else
+		 {
+			 sleep(2);
+			 fprintf(stderr," Openning port Failed: %d, %d \r",connectionAttempts,
+					 returnValue);
+			 returnValue = RETURN_ERROR;
+		 }
+	   }
+
+	  fprintf(stderr,"Joystick detected: %s\n\t%d axis\n\t%d buttons\n\n"
+	                 , name_of_controller
+	                 , num_of_axis
+	                 , num_of_buttons );
+
+
+  rt_task_set_periodic(NULL, TM_NOW, TM_INFINITE);
+
+  while(1)
+  {
+   if (returnValue == RETURN_OK)
+   {
+        controllerBytesRead = read(controllerFd, &jse, sizeof(jse));
+
+		if (controllerBytesRead < 0)
+		{
+			returnValue=RETURN_ERROR;
+		}
+
+		else
+		{
+			 returnValue = RETURN_OK;
+
+			 switch (jse.type & ~JS_EVENT_INIT)
+			 		{
+			 			case JS_EVENT_AXIS:
+			 				axis   [ jse.number ] = jse.value;
+			 				break;
+			 		}
+			 fprintf(stderr, "X: %6d  Y: %6d Z: %6d  R: %6d  \r ", axis[0], axis[1], axis[2], axis[3] );
+             fflush(stdout);
+		}
+	}
+
+
+
+      tcflush(controllerFd,TCIOFLUSH);
+   	  rt_task_wait_period(NULL);
+  }
+
+
+
+  close(controllerFd);
+
+}/*(END) CONTROLLER_READ_TASK_FUNC*/
+
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
 void apc220_read_task_func(void *arg)
 {
 	int returnValue;
@@ -235,8 +344,9 @@ void apc220_read_task_func(void *arg)
 
 
 	/*init values*/
-    returnValue				   = RETURN_OK;
+    returnValue				   = RETURN_ERROR;
 	length		               = 0;
+	connectionAttempts 		   = 0;
 	buffer[0] 	               = '\0';
 	recivedValuesCounter   	   = 0;
 	acx					       = 0.0;
@@ -252,31 +362,34 @@ void apc220_read_task_func(void *arg)
 	num 			  		   = 0.0;
 
 
-	 /*init values*/
-				    connectionAttempts = 0;
 
-				    /*Create UDP socket*/
-				      udpWriteSocket = socket(PF_INET, SOCK_DGRAM, 0);
-				      fprintf(stderr,"Write Socket:%d\n",udpWriteSocket);
-				     if(udpWriteSocket>=0)
-				     {
-				    	 /*Configure settings in address struct*/
-				    	 xplaneWriteAddress.sin_family = AF_INET;
-				    	 xplaneWriteAddress.sin_port = htons(XPLANE_SEND_PORT);
-				    	 xplaneWriteAddress.sin_addr.s_addr = inet_addr(XPLANE_IP_ADDRESS);
-				    	 memset(xplaneWriteAddress.sin_zero,'\0', sizeof(xplaneWriteAddress.sin_zero));
+	  while (connectionAttempts < MAX_CONNECTION_ATTEMPTS && returnValue == RETURN_ERROR)
+	   {
 
-				    	 /*Initialize size variable to be used later on*/
-				    	 addr_size = sizeof xplaneWriteAddress;
-				    	 returnValue = RETURN_OK;
-				     }
-				     else
-				     {
-				    	 sleep(2);
-				    	 fprintf(stderr," Openning socket Failed: %d, %d \r",connectionAttempts,
-				    			 returnValue);
-				    	 returnValue=RETURN_ERROR;
-				     }
+
+		/*Create UDP socket*/
+		  udpWriteSocket = socket(PF_INET, SOCK_DGRAM, 0);
+		  fprintf(stderr,"Open Xplane WSocket: OK.\n");
+		 if(udpWriteSocket>=0)
+		 {
+			 /*Configure settings in address struct*/
+			 xplaneWriteAddress.sin_family = AF_INET;
+			 xplaneWriteAddress.sin_port = htons(XPLANE_SEND_PORT);
+			 xplaneWriteAddress.sin_addr.s_addr = inet_addr(XPLANE_IP_ADDRESS);
+			 memset(xplaneWriteAddress.sin_zero,'\0', sizeof(xplaneWriteAddress.sin_zero));
+
+			 /*Initialize size variable to be used later on*/
+			 addr_size = sizeof xplaneWriteAddress;
+			 returnValue = RETURN_OK;
+		 }
+		 else
+		 {
+			 sleep(2);
+			 fprintf(stderr," Openning socket Failed: %d, %d \r",connectionAttempts,
+					 returnValue);
+			 returnValue=RETURN_ERROR;
+		 }
+	   }
 
 
 	rt_task_set_periodic(NULL, TM_NOW, TM_INFINITE);
@@ -284,15 +397,14 @@ void apc220_read_task_func(void *arg)
 	  while(1)
 	  {
 
-
-		  if (returnValue == RETURN_OK){
-
+		  if (returnValue == RETURN_OK)
+		  {
 		  buffer[0] 	  = '\0';
 		  length		  = 0;
 		  num 			  = 0.0;
-		  fcntl(fd,F_SETFL,0);
+		  fcntl(apcFd,F_SETFL,0);
 		  aliveTasks.isReadTaskAlive=false;
-		  length = read(fd, &buffer, sizeof(buffer));
+		  length = read(apcFd, &buffer, sizeof(buffer));
 		  aliveTasks.isReadTaskAlive=true;
 				if (length == RETURN_ERROR)
 				{
@@ -325,7 +437,7 @@ void apc220_read_task_func(void *arg)
 						//fprintf(stderr,"acx:%f--->acy:%f--->acz:%f--->gyx:%f--->gyy:%f--->gyz:%f--->"
 							//	"motor1:%f--->motor2:%f--->motor3:%f--->motor4:%f\n\n",acx,acy, acz, gyx, gyy, gyz,motor1,motor2,motor3,motor4);
 
-						returnValue = xplane_write_task_func(inputVectors);
+						returnValue = sendToXplane(inputVectors);
 						//fprintf(stderr,"APC220 write to QUEUE return: %d\n",returnValue);
 						if(returnValue>0)
 						{
@@ -425,7 +537,7 @@ void apc220_read_task_func(void *arg)
 					}
 				}
 
-          tcflush(fd,TCIOFLUSH);
+          tcflush(apcFd,TCIOFLUSH);
 	      rt_task_wait_period(NULL);
           }
 	  }
@@ -459,8 +571,8 @@ int open_port(void)
 		  returnValue == RETURN_ERROR)
    {
    connectionAttempts++;
-   fd = open(PORT, O_RDWR | O_NOCTTY | O_NONBLOCK | O_FSYNC);
-     if(fd>=0)
+   apcFd = open(PORT, O_RDWR | O_NOCTTY | O_NONBLOCK | O_FSYNC);
+     if(apcFd>=0)
      {
 
     	 bzero(&portSettings, sizeof(portSettings));
@@ -473,10 +585,10 @@ int open_port(void)
 		 portSettings.c_oflag &= ~OPOST;
 		 portSettings.c_cc[VMIN] = 0;
 		 portSettings.c_cc[VTIME] = 250;
-    	 tcflush(fd, TCIFLUSH);
+    	 tcflush(apcFd, TCIFLUSH);
     	 //cfsetospeed(&portSettings, BAUDRATE);
     	 cfsetispeed(&portSettings, BAUDRATE);
-    	 tcsetattr(fd,TCSANOW,&portSettings);
+    	 tcsetattr(apcFd,TCSANOW,&portSettings);
     	 returnValue=RETURN_OK;
      }
      else
@@ -517,20 +629,19 @@ int open_port(void)
 								   0,
 								   99,
 								   T_JOINABLE);
+
+	 returnValue = rt_task_create(&controller_read_task,
+								   "controller_read_task",
+								   0,
+								   99,
+								   T_JOINABLE);
+
 	 returnValue = rt_task_create(&apc220_check_read_alive_task,
 								   "apc220_check_read_alive_task",
 								   0,
 								   20,
 								   T_JOINABLE);
 
-if (returnValue == RETURN_OK)
-	   {
-		 /*returnValue = rt_queue_create(&acp220_inputQueue,
-				 	 	 	 	 	    acp220_inputQueueName,
-				  	  	  	  	  	  sizeof(inputVectors),
-				  	  	  	  	       Q_UNLIMITED,
-				  	  	  	  	       Q_FIFO);*/
-	   }
 	 if (returnValue == RETURN_OK)
 	   {
 		 returnValue=open_port();
@@ -538,7 +649,7 @@ if (returnValue == RETURN_OK)
 
      if (returnValue == RETURN_OK)
        {
-     	  fprintf(stderr,"Open port : OK. Defined at:%d\n",fd);
+     	  fprintf(stderr,"Open Apc220 port: OK.\n");
      	  /*start tasks*/
      	  returnValue = rt_task_start(&apc220_read_task,
      		   	 	 	 	 	 	  &apc220_read_task_func,
@@ -547,6 +658,13 @@ if (returnValue == RETURN_OK)
 						 			  &apc220_check_read_alive_task_func,
 									  NULL);*/
        }
+     if (returnValue == RETURN_OK)
+	   {
+		 returnValue = rt_task_start(&controller_read_task,
+									  &controller_read_task_func,
+									  NULL);
+	   }
+
        else
        {
 

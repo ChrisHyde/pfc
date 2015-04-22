@@ -22,6 +22,7 @@
 #include <sys/shm.h>
 #include <semaphore.h>
 #include <sys/stat.h>
+#include <linux/joystick.h>
 #include <math.h>
 
 
