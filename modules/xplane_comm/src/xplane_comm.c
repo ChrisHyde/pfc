@@ -394,7 +394,7 @@ void xplane_write_task_func(void *arg)
 
          if (bytesRead<0)
          {
-           fprintf(stderr,"transfer error \r\n");
+          // fprintf(stderr,"transfer error \r\n");
            //returnValue=rt_queue_unbind(&acp220_inputQueue) ;
          }
          else
@@ -445,11 +445,11 @@ void xplane_write_task_func(void *arg)
 								   50,
 								   T_JOINABLE);
 
-	 returnValue = rt_task_create(&xplane_write_task,
+	 /*returnValue = rt_task_create(&xplane_write_task,
 	 								   "xplane_write_task",
 	 								   0,
 	 								   99,
-	 								   T_JOINABLE);
+	 								   T_JOINABLE);*/
 	 returnValue = rt_task_create(&xplane_check_alive_task,
 								   "xplane_check_alive_task",
 								   0,
@@ -471,12 +471,12 @@ void xplane_write_task_func(void *arg)
 
      	  /*start tasks*/
 
-     	 returnValue = rt_task_start(&xplane_write_task,
+     	 /*returnValue = rt_task_start(&xplane_write_task,
      	      		   	 	 	 	 &xplane_write_task_func,
-     	      			 	 	 	 NULL);
-     	  returnValue = rt_task_start(&xplane_read_task,
+     	      			 	 	 	 NULL);*/
+     	  /*returnValue = rt_task_start(&xplane_read_task,
      	     		   	 	 	 	 	 	  &xplane_read_task_func,
-     	     			 	 	 	 	 	  NULL);
+     	     			 	 	 	 	 	  NULL);*/
      	 /* returnValue = rt_task_start(&xplane_check_alive_task,
 									  &xplane_check_alive_task_func,
 									  NULL);*/

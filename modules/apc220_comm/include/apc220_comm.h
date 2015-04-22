@@ -25,9 +25,58 @@
 speed_t BAUDRATE 	    				= B9600;
 
 
+
+#define BUFFERSIZE 				  	90 //Max length of buffer
+#define XPLANE_IP_ADDRESS 	      	"192.168.1.22"
+#define LOCAL_IP_ADDRESS    	  	"192.168.1.17"
+#define XPLANE_SEND_PORT 		  	49000   //The port on which to listen for incoming data
+#define XPLANE_RECIEVE_PORT 	  	49001
+#define MAX_CONNECTION_ATTEMPTS   	5
+
+
+/*UDP definitions*/
+/**********************************************************************************
+ *  01234            5678             9012  3456  7890  1234  5678  9012  3456  7890
+ * |XXXXX| 			|XXXX|			 |XXXX  XXXX  XXXX  XXXX  XXXX  XXXX  XXXX  XXXX|
+ * header(5 bytes)  Index (4bytes)   Data (32 bytes, 8 groups of 4 bytes)
+ *
+ * Total 41 bytes per index
+ *********************************************************************************/
+#define UDP_HEADER_SIZE			  	4   /*last byte not used*/
+#define UDP_INDEX_START			  	5
+#define UDP_SECOND_INDEX_START		41
+#define UDP_INDEX_SIZE			  	4
+#define UDP_DATA_START				9
+#define UDP_SECOND_DATA_START		45
+#define UDP_DATA_SIZE				4
+#define UDP_DATA_TOTAL_SIZE			32
+#define UDP_DATA_GROUPS				8
+#define UDP_HEADER_INSTRUCTION   	"DATA"
+#define XPLANE_UNSED_VALUE		   	-999
+
+/*Xplane index definitions*/
+#define XPLANE_BASIC_INDEXES_USED      2
+#define XPLANE_G_FORCES_INDEX	       4
+#define XPLANE_ANGULAR_MOMENTS_INDEX   15
+#define XPLANE_ANGULAR_VELOCITY_INDEX  16
+#define XPLANE_PITCH_ROLL_INDEX    	   17
+#define XPLANE_ENGINE_POWER_INDEX  	   25
+#define XPLANE_UNSED_VALUE		   	   -999
+
+
+
 /*Xenomai Tasks*/
 RT_TASK  apc220_read_task;
 RT_TASK  apc220_check_read_alive_task;
+
+
+union UN_Byte_float_transformation
+{
+	 char  byteValue[4];        // --- first variable -  char or byte array
+	 float floatValue;          // ---- second variable - float
+	 char  header[4];
+}  ;
+
 
 
 typedef struct  {

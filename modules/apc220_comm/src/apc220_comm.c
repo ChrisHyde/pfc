@@ -17,11 +17,147 @@ int 	fd			    = 0;
 
 int     loopCompleted   = 0;
 bool    PANIC_MESSAGE   = false;
-
+int udpWriteSocket	= 0;
+struct sockaddr_in xplaneWriteAddress;
+socklen_t addr_size;
 
 ST_alivetasks   aliveTasks;
 ST_apc220_inputVectors inputVectors;
 
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
+int xplane_write_task_func(ST_apc220_inputVectors inputVectors)
+{
+
+    int returnValue;
+	char buffer[BUFFERSIZE];
+
+	/*init values*/
+	returnValue = RETURN_OK;
+	buffer[0] 	= '\0';
+
+
+		             union UN_Byte_float_transformation data;
+
+		            // fprintf(stderr,"buffer %f\n",inputVectors.M2);
+		             //BUILD UDP MESSAGE
+		             //HEADER
+		             strcpy(data.byteValue,UDP_HEADER_INSTRUCTION);
+		             buffer[0]=data.byteValue[0];
+		             buffer[1]=data.byteValue[1];
+		             buffer[2]=data.byteValue[2];
+		             buffer[3]=data.byteValue[3];
+		             buffer[UDP_HEADER_SIZE]=0;
+		             buffer[UDP_INDEX_START]=XPLANE_ANGULAR_VELOCITY_INDEX;
+		             buffer[UDP_INDEX_START+1]=0;
+		             buffer[UDP_INDEX_START+2]=0;
+		             buffer[UDP_INDEX_START+3]=0;
+		             data.floatValue = inputVectors.GyX;
+		             buffer[UDP_DATA_START]=data.byteValue[0];
+		             buffer[UDP_DATA_START+1]=data.byteValue[1];
+		             buffer[UDP_DATA_START+2]=data.byteValue[2];
+		             buffer[UDP_DATA_START+3]=data.byteValue[3];
+		             data.floatValue = inputVectors.GyY;
+		             buffer[UDP_DATA_START+UDP_DATA_SIZE]=data.byteValue[0];
+					 buffer[UDP_DATA_START+UDP_DATA_SIZE+1]=data.byteValue[1];
+					 buffer[UDP_DATA_START+UDP_DATA_SIZE+2]=data.byteValue[2];
+					 buffer[UDP_DATA_START+UDP_DATA_SIZE+3]=data.byteValue[3];
+					 data.floatValue = inputVectors.GyZ;
+					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE]=data.byteValue[0];
+					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+1]=data.byteValue[1];
+					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+2]=data.byteValue[2];
+					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+3]=data.byteValue[3];
+					 data.floatValue = XPLANE_UNSED_VALUE;
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*3)]=data.byteValue[0];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*3)+1]=data.byteValue[1];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*3)+2]=data.byteValue[2];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*3)+3]=data.byteValue[3];
+					 data.floatValue = XPLANE_UNSED_VALUE;
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*4)]=data.byteValue[0];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*4)+1]=data.byteValue[1];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*4)+2]=data.byteValue[2];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*4)+3]=data.byteValue[3];
+					 data.floatValue =  XPLANE_UNSED_VALUE;
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*5)]=data.byteValue[0];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*5)+1]=data.byteValue[1];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*5)+2]=data.byteValue[2];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*5)+3]=data.byteValue[3];
+					 data.floatValue = XPLANE_UNSED_VALUE;
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*6)]=data.byteValue[0];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*6)+1]=data.byteValue[1];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*6)+2]=data.byteValue[2];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*6)+3]=data.byteValue[3];
+					 data.floatValue = XPLANE_UNSED_VALUE;
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*7)]=data.byteValue[0];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*7)+1]=data.byteValue[1];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*7)+2]=data.byteValue[2];
+					 buffer[UDP_DATA_START+(UDP_DATA_SIZE*7)+3]=data.byteValue[3];
+
+					 //SECOND DATA
+					 buffer[UDP_SECOND_INDEX_START]=XPLANE_ENGINE_POWER_INDEX;
+					 buffer[UDP_SECOND_INDEX_START+1]=0;
+					 buffer[UDP_SECOND_INDEX_START+2]=0;
+					 buffer[UDP_SECOND_INDEX_START+3]=0;
+					 data.floatValue = inputVectors.M1;
+					 buffer[UDP_SECOND_DATA_START]=data.byteValue[0];
+					 buffer[UDP_SECOND_DATA_START+1]=data.byteValue[1];
+					 buffer[UDP_SECOND_DATA_START+2]=data.byteValue[2];
+					 buffer[UDP_SECOND_DATA_START+3]=data.byteValue[3];
+					 data.floatValue = inputVectors.M2;
+					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE]=data.byteValue[0];
+					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+1]=data.byteValue[1];
+					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+2]=data.byteValue[2];
+					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+3]=data.byteValue[3];
+					 data.floatValue = inputVectors.M3;
+					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE]=data.byteValue[0];
+					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+1]=data.byteValue[1];
+					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+2]=data.byteValue[2];
+					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+3]=data.byteValue[3];
+					 data.floatValue = inputVectors.M4;
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*3)]=data.byteValue[0];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*3)+1]=data.byteValue[1];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*3)+2]=data.byteValue[2];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*3)+3]=data.byteValue[3];
+					 data.floatValue = XPLANE_UNSED_VALUE;
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*4)]=data.byteValue[0];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*4)+1]=data.byteValue[1];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*4)+2]=data.byteValue[2];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*4)+3]=data.byteValue[3];
+					 data.floatValue =  XPLANE_UNSED_VALUE;
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*5)]=data.byteValue[0];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*5)+1]=data.byteValue[1];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*5)+2]=data.byteValue[2];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*5)+3]=data.byteValue[3];
+					 data.floatValue = XPLANE_UNSED_VALUE;
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*6)]=data.byteValue[0];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*6)+1]=data.byteValue[1];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*6)+2]=data.byteValue[2];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*6)+3]=data.byteValue[3];
+					 data.floatValue = XPLANE_UNSED_VALUE;
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)]=data.byteValue[0];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+1]=data.byteValue[1];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+2]=data.byteValue[2];
+					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+3]=data.byteValue[3];
+
+
+
+		  sendto(udpWriteSocket,buffer,BUFFERSIZE,0,(struct sockaddr *)&xplaneWriteAddress,addr_size);
+		  tcflush(udpWriteSocket,TCIOFLUSH);
+		  memset(&buffer[0], 0, sizeof(buffer));
+         return returnValue;
+
+
+}
+/* (END) XPLANE_WRITE_TASK_FUNC*/
 
 
 
@@ -94,9 +230,12 @@ void apc220_read_task_func(void *arg)
     float gyx,gyy,gyz;
     float motor1,motor2,motor3,motor4;
     float num;
+	int connectionAttempts;
+
+
 
 	/*init values*/
-    returnValue				   = 0;
+    returnValue				   = RETURN_OK;
 	length		               = 0;
 	buffer[0] 	               = '\0';
 	recivedValuesCounter   	   = 0;
@@ -111,10 +250,43 @@ void apc220_read_task_func(void *arg)
 	motor3					   = 0.0;
 	motor4					   = 0.0;
 	num 			  		   = 0.0;
+
+
+	 /*init values*/
+				    connectionAttempts = 0;
+
+				    /*Create UDP socket*/
+				      udpWriteSocket = socket(PF_INET, SOCK_DGRAM, 0);
+				      fprintf(stderr,"Write Socket:%d\n",udpWriteSocket);
+				     if(udpWriteSocket>=0)
+				     {
+				    	 /*Configure settings in address struct*/
+				    	 xplaneWriteAddress.sin_family = AF_INET;
+				    	 xplaneWriteAddress.sin_port = htons(XPLANE_SEND_PORT);
+				    	 xplaneWriteAddress.sin_addr.s_addr = inet_addr(XPLANE_IP_ADDRESS);
+				    	 memset(xplaneWriteAddress.sin_zero,'\0', sizeof(xplaneWriteAddress.sin_zero));
+
+				    	 /*Initialize size variable to be used later on*/
+				    	 addr_size = sizeof xplaneWriteAddress;
+				    	 returnValue = RETURN_OK;
+				     }
+				     else
+				     {
+				    	 sleep(2);
+				    	 fprintf(stderr," Openning socket Failed: %d, %d \r",connectionAttempts,
+				    			 returnValue);
+				    	 returnValue=RETURN_ERROR;
+				     }
+
+
 	rt_task_set_periodic(NULL, TM_NOW, TM_INFINITE);
 
 	  while(1)
 	  {
+
+
+		  if (returnValue == RETURN_OK){
+
 		  buffer[0] 	  = '\0';
 		  length		  = 0;
 		  num 			  = 0.0;
@@ -150,12 +322,10 @@ void apc220_read_task_func(void *arg)
 						inputVectors.M3=motor3;
 						inputVectors.M4=motor4;
 						recivedValuesCounter=0;
-						fprintf(stderr,"acx:%f--->acy:%f--->acz:%f--->gyx:%f--->gyy:%f--->gyz:%f--->"
-								"motor1:%f--->motor2:%f--->motor3:%f--->motor4:%f\n\n",acx,acy, acz, gyx, gyy, gyz,motor1,motor2,motor3,motor4);
-			         returnValue = rt_queue_write(&acp220_inputQueue,
-													 &inputVectors,
-													 sizeof(inputVectors),
-													 Q_URGENT);
+						//fprintf(stderr,"acx:%f--->acy:%f--->acz:%f--->gyx:%f--->gyy:%f--->gyz:%f--->"
+							//	"motor1:%f--->motor2:%f--->motor3:%f--->motor4:%f\n\n",acx,acy, acz, gyx, gyy, gyz,motor1,motor2,motor3,motor4);
+
+						returnValue = xplane_write_task_func(inputVectors);
 						//fprintf(stderr,"APC220 write to QUEUE return: %d\n",returnValue);
 						if(returnValue>0)
 						{
@@ -258,6 +428,7 @@ void apc220_read_task_func(void *arg)
           tcflush(fd,TCIOFLUSH);
 	      rt_task_wait_period(NULL);
           }
+	  }
 }
 /* (END) APC220_READ_TASK_FUNC*/
 
@@ -354,11 +525,11 @@ int open_port(void)
 
 if (returnValue == RETURN_OK)
 	   {
-		 returnValue = rt_queue_create(&acp220_inputQueue,
+		 /*returnValue = rt_queue_create(&acp220_inputQueue,
 				 	 	 	 	 	    acp220_inputQueueName,
 				  	  	  	  	  	  sizeof(inputVectors),
 				  	  	  	  	       Q_UNLIMITED,
-				  	  	  	  	       Q_FIFO);
+				  	  	  	  	       Q_FIFO);*/
 	   }
 	 if (returnValue == RETURN_OK)
 	   {
