@@ -12,6 +12,11 @@
 #define ACK_INPUT_MSG_SIZE				 8
 
 #define CONTROLLER_ADDRESS_PORT 		 "/dev/input/js0"
+#define CONTROLLER_AXIS_MAX_VALUE		32767
+#define CONTROLLER_AXIS_MIN_VALUE		-32767
+#define CONTROLLER_BUFFER_SIZE          3
+#define HOVER_SPEED						60
+
 
 #define READ_POSITION_AcX					 1
 #define READ_POSITION_AcY					 2

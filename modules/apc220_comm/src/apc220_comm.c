@@ -13,12 +13,13 @@
 
 /*global variables*/
 
-int 	apcFd			= 0;
-int     controllerFd	= 0;
-int     loopCompleted   = 0;
-int     sendToXplaneCounter = 0;
-bool    PANIC_MESSAGE   = false;
-
+int 	apcFd					= 0;
+int     controllerFd			= 0;
+int     loopCompleted   		= 0;
+int     sendToXplaneCounter 	= 0;
+bool    PANIC_MESSAGE   	  	= false;
+int 	controllerStartFlag1	= 0;
+int 	controllerInFlight		= 0;
 
 
 int udpWriteSocket		= 0;
@@ -227,6 +228,176 @@ void apc220_check_read_alive_task_func(void *arg)
  * Features     : ...
  *
  ******************************************************************************/
+int xplane_controller_motors(int X,int Y,int Z,int R)
+{
+	int 	returnValue;
+	int motor1,motor2,motor3,motor4;
+	int xplane4MotorValue;
+	int xplane2XMotorValue;
+	int xplane2YMotorValue;
+	char buffer[CONTROLLER_BUFFER_SIZE];
+
+
+	/*init values*/
+	returnValue		   = RETURN_ERROR;
+	motor1			   = 0;
+	motor2			   = 0;
+	motor3			   = 0;
+	motor4			   = 0;
+	xplane4MotorValue  = 0;
+	xplane2XMotorValue = 0;
+	xplane2YMotorValue = 0;
+	buffer[0]   	   = '\0';
+
+
+
+	//fprintf(stderr,"\nZ:%d\n",Z);
+	//fprintf(stderr,"flag1:%d\n",controllerStartFlag1);
+	//fprintf(stderr,"Inflight:%d\n",controllerInFlight);
+	//Start Fligth
+
+	//Takeoff sequence***********************************************
+	if(controllerInFlight == 0 )
+	{
+		if(Z == CONTROLLER_AXIS_MAX_VALUE)
+		{
+			controllerStartFlag1 = 1;
+
+		}
+	}
+	if(controllerStartFlag1 == 1 && controllerInFlight == 0)
+	{
+		controllerInFlight = 1;
+		//fprintf(stderr,"TAKEOFF\n");
+	}
+
+
+
+	//Landing sequence***********************************************
+	if(controllerInFlight == 1 && controllerStartFlag1 == 1)
+	{
+		if(Z == CONTROLLER_AXIS_MIN_VALUE)
+		{
+			controllerStartFlag1 = 0;
+			controllerInFlight = 0;
+			fprintf(stderr,"LAND\n");
+		}
+	}
+
+	//Vertical Speed assignment
+	if(controllerInFlight == 1 && controllerStartFlag1 == 1)
+	{
+		if (R==0 && X==0 && Y==0)
+		{
+			motor1 = HOVER_SPEED;
+			motor2 = HOVER_SPEED;
+			motor3 = HOVER_SPEED;
+			motor4 = HOVER_SPEED;
+		}
+		else
+		{
+			//climb
+			if(R<0)
+			{
+			xplane4MotorValue=(1)*(HOVER_SPEED+((R*(100-HOVER_SPEED))/CONTROLLER_AXIS_MIN_VALUE));
+			motor1=xplane4MotorValue;
+			motor2=xplane4MotorValue;
+			motor3=xplane4MotorValue;
+			motor4=xplane4MotorValue;
+			}
+			//descent
+			if(R>0)
+			{
+			xplane4MotorValue=(HOVER_SPEED-((R*HOVER_SPEED)/CONTROLLER_AXIS_MAX_VALUE));
+			motor1=xplane4MotorValue;
+			motor2=xplane4MotorValue;
+			motor3=xplane4MotorValue;
+			motor4=xplane4MotorValue;
+			}
+			//yaw
+			if (X<0)
+			{   xplane2XMotorValue = (HOVER_SPEED+((X*(100-HOVER_SPEED))/CONTROLLER_AXIS_MIN_VALUE));
+			    motor1=HOVER_SPEED;
+			    motor2=xplane2XMotorValue;
+			    motor3=HOVER_SPEED;
+				motor4=xplane2XMotorValue;
+			}
+			if (X>0)
+			{   xplane2XMotorValue =(HOVER_SPEED+((X*(100-HOVER_SPEED))/CONTROLLER_AXIS_MAX_VALUE));
+				motor1=xplane2XMotorValue;
+				motor2=HOVER_SPEED;
+				motor3=xplane2XMotorValue;
+				motor4=HOVER_SPEED;
+			}
+			//pitch
+			if (Y<0)
+			{   xplane2YMotorValue = (HOVER_SPEED+((Y*(100-HOVER_SPEED))/CONTROLLER_AXIS_MIN_VALUE));
+				motor1=HOVER_SPEED;
+				motor2=HOVER_SPEED;
+				motor3=xplane2YMotorValue;
+				motor4=xplane2YMotorValue;
+			}
+			if (Y>0)
+			{   xplane2YMotorValue =(HOVER_SPEED+((Y*(100-HOVER_SPEED))/CONTROLLER_AXIS_MAX_VALUE));
+				motor1=xplane2YMotorValue;
+				motor2=xplane2YMotorValue;
+				motor3=HOVER_SPEED;
+				motor4=HOVER_SPEED;
+			}
+		}
+
+
+	}
+	//fprintf(stderr,"\nmotor1 :%d,motor2 :%d,motor3 :%d,motor4 :%d, \n",motor1,motor2,motor3,motor4);
+
+	sprintf(buffer, "%d", motor1);
+	buffer[0] = '\0';
+	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
+	sprintf(buffer, "%d", motor2);
+	buffer[0] = '\0';
+	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
+	sprintf(buffer, "%d", motor3);
+	buffer[0] = '\0';
+	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
+	sprintf(buffer, "%d", motor4);
+	buffer[0] = '\0';
+	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
+	sprintf(buffer, "%d", 999);
+	buffer[0] = '\0';
+	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
+
+	tcflush(apcFd,TCIOFLUSH);
+	fflush(stdout);
+
+//OFF IDLE
+	if(controllerStartFlag1 == 0 && controllerInFlight == 0)
+		{
+			controllerInFlight = 0;
+			controllerStartFlag1 = 0;
+			fprintf(stderr,"OFF\n");
+		}
+
+
+
+
+
+
+	return(returnValue);
+}/*(END) XPLANE_CONTROLLER_MOTORS*/
+
+
+
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
 void controller_read_task_func(void *arg)
 {
 	int 	returnValue;
@@ -301,8 +472,9 @@ void controller_read_task_func(void *arg)
 			 				axis   [ jse.number ] = jse.value;
 			 				break;
 			 		}
-			 fprintf(stderr, "X: %6d  Y: %6d Z: %6d  R: %6d  \r ", axis[0], axis[1], axis[2], axis[3] );
+			 //fprintf(stderr, "X: %6d  Y: %6d Z: %6d  R: %6d  \r ", axis[0], axis[1], axis[2], axis[3] );
              fflush(stdout);
+             xplane_controller_motors(axis[0], axis[1], axis[2], axis[3]);
 		}
 	}
 
