@@ -14,7 +14,8 @@
 #define CONTROLLER_ADDRESS_PORT 		 "/dev/input/js0"
 #define CONTROLLER_AXIS_MAX_VALUE		32767
 #define CONTROLLER_AXIS_MIN_VALUE		-32767
-#define CONTROLLER_BUFFER_SIZE          3
+#define CONTROLLER_BUFFER_SIZE          24
+#define CONTROLLER_MOTOR_BUFFER_SIZE	3
 #define HOVER_SPEED						60
 
 
@@ -29,7 +30,7 @@
 #define READ_POSITION_M3					 9
 #define READ_POSITION_M4					 10
 
-speed_t BAUDRATE 	    				= B9600;
+speed_t BAUDRATE 	    				= B19200;
 
 
 
@@ -85,14 +86,6 @@ union UN_Byte_float_transformation
 	 char  header[4];
 }  ;
 
-
-//struct js_event
-//{
- // unsigned int 	time;      /* event timestamp in milliseconds */
- // short 		value;   /* value */
- // unsigned char type;     /* event type */
- // unsigned char number;   /* axis/button number */
-//};
 
 
 typedef struct  {

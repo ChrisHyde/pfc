@@ -236,6 +236,10 @@ int xplane_controller_motors(int X,int Y,int Z,int R)
 	int xplane2XMotorValue;
 	int xplane2YMotorValue;
 	char buffer[CONTROLLER_BUFFER_SIZE];
+	char bufferMotor1[CONTROLLER_MOTOR_BUFFER_SIZE];
+	char bufferMotor2[CONTROLLER_MOTOR_BUFFER_SIZE];
+	char bufferMotor3[CONTROLLER_MOTOR_BUFFER_SIZE];
+	char bufferMotor4[CONTROLLER_MOTOR_BUFFER_SIZE];
 
 
 	/*init values*/
@@ -248,12 +252,16 @@ int xplane_controller_motors(int X,int Y,int Z,int R)
 	xplane2XMotorValue = 0;
 	xplane2YMotorValue = 0;
 	buffer[0]   	   = '\0';
+	bufferMotor1[0]	   = '\0';
+	bufferMotor2[0]	   = '\0';
+	bufferMotor3[0]	   = '\0';
+	bufferMotor4[0]	   = '\0';
 
 
 
-	//fprintf(stderr,"\nZ:%d\n",Z);
-	//fprintf(stderr,"flag1:%d\n",controllerStartFlag1);
-	//fprintf(stderr,"Inflight:%d\n",controllerInFlight);
+	fprintf(stderr,"\nZ:%d\n",Z);
+	fprintf(stderr,"flag1:%d\n",controllerStartFlag1);
+	fprintf(stderr,"Inflight:%d\n",controllerInFlight);
 	//Start Fligth
 
 	//Takeoff sequence***********************************************
@@ -348,34 +356,60 @@ int xplane_controller_motors(int X,int Y,int Z,int R)
 
 
 	}
-	//fprintf(stderr,"\nmotor1 :%d,motor2 :%d,motor3 :%d,motor4 :%d, \n",motor1,motor2,motor3,motor4);
 
-	sprintf(buffer, "%d", motor1);
-	buffer[0] = '\0';
-	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
-	sprintf(buffer, "%d", motor2);
-	buffer[0] = '\0';
-	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
-	sprintf(buffer, "%d", motor3);
-	buffer[0] = '\0';
-	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
-	sprintf(buffer, "%d", motor4);
-	buffer[0] = '\0';
-	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
-	sprintf(buffer, "%d", 999);
-	buffer[0] = '\0';
-	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
-
-	tcflush(apcFd,TCIOFLUSH);
-	fflush(stdout);
-
-//OFF IDLE
 	if(controllerStartFlag1 == 0 && controllerInFlight == 0)
 		{
 			controllerInFlight = 0;
 			controllerStartFlag1 = 0;
 			fprintf(stderr,"OFF\n");
 		}
+	//fprintf(stderr,"\nmotor1 :%d,motor2 :%d,motor3 :%d,motor4 :%d, \n",motor1,motor2,motor3,motor4);
+
+	buffer[0] = '\0';
+	sprintf(bufferMotor1, "%d", motor1);
+	if(motor1<100)
+	{
+		bufferMotor1[2] = bufferMotor1[1];
+		bufferMotor1[1] = bufferMotor1[0];
+		bufferMotor1[0] = '0';
+	}
+	sprintf(bufferMotor2, "%d", motor2);
+	if(motor2<100)
+		{
+				bufferMotor2[2] = bufferMotor2[1];
+				bufferMotor2[1] = bufferMotor2[0];
+				bufferMotor2[0] = '0';
+		}
+	sprintf(bufferMotor3, "%d", motor3);
+	if(motor3<100)
+		{
+				bufferMotor3[2] = bufferMotor3[1];
+				bufferMotor3[1] = bufferMotor3[0];
+				bufferMotor3[0] = '0';
+		}
+	sprintf(bufferMotor4, "%d", motor4);
+	if(motor4<100)
+		{
+				bufferMotor4[2] = bufferMotor4[1];
+				bufferMotor4[1] = bufferMotor4[0];
+				bufferMotor4[0] = '0';
+		}
+
+	strcpy(buffer,bufferMotor1);
+	strcat(buffer,bufferMotor2);
+	strcat(buffer,bufferMotor3);
+	strcat(buffer,bufferMotor4);
+
+	fprintf(stderr,"sending...%s\n",buffer);
+
+	write(apcFd, buffer, CONTROLLER_BUFFER_SIZE);
+
+
+	tcflush(apcFd,TCIOFLUSH);
+	fflush(stdout);
+
+//OFF IDLE
+
 
 
 
@@ -758,10 +792,12 @@ int open_port(void)
 		 portSettings.c_cc[VMIN] = 0;
 		 portSettings.c_cc[VTIME] = 250;
     	 tcflush(apcFd, TCIFLUSH);
-    	 //cfsetospeed(&portSettings, BAUDRATE);
+    	 cfsetospeed(&portSettings, BAUDRATE);
     	 cfsetispeed(&portSettings, BAUDRATE);
     	 tcsetattr(apcFd,TCSANOW,&portSettings);
     	 returnValue=RETURN_OK;
+
+
      }
      else
      {
@@ -771,6 +807,7 @@ int open_port(void)
     	 returnValue=RETURN_ERROR;
 
      }
+
    }
 
   return (returnValue);
@@ -799,19 +836,19 @@ int open_port(void)
 	 returnValue = rt_task_create(&apc220_read_task,
 								   "apc220_read_task",
 								   0,
-								   99,
+								   90,
 								   T_JOINABLE);
 
 	 returnValue = rt_task_create(&controller_read_task,
 								   "controller_read_task",
 								   0,
-								   99,
+								   20,
 								   T_JOINABLE);
 
 	 returnValue = rt_task_create(&apc220_check_read_alive_task,
 								   "apc220_check_read_alive_task",
 								   0,
-								   20,
+								   0,
 								   T_JOINABLE);
 
 	 if (returnValue == RETURN_OK)
