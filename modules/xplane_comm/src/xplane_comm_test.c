@@ -10,7 +10,23 @@
 
 #include "xplane_comm.h"
 
+int 	apcFd					= 0;
 
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
+void apc220_read_task_func(void *arg)
+{
+
+}
 /*******************************************************************************
  * Type         : ...
  * Name         : ...
@@ -27,6 +43,7 @@ int open_port(void)
 
     int returnValue;
     int connectionAttempts;
+    speed_t BAUDRATE 	    				= B9600;
 
     /*init values*/
     connectionAttempts = 0;
@@ -90,8 +107,11 @@ int open_port(void)
 	{
 
 		RT_TASK  serial_write;
-	    int   returnValue;
+
+	    int   returnValue = RETURN_OK;
+
 	    returnValue = open_port();
+
 	    if(returnValue == RETURN_OK)
 	    {
 		 returnValue = rt_task_create(&serial_write,
