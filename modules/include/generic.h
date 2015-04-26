@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 #include <linux/joystick.h>
 #include <math.h>
-
+#include <pthread.h>
 
 #include <linux/kernel.h>
 

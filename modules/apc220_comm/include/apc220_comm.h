@@ -9,7 +9,7 @@
 #define APC220_OK_CONNECTION            50
 #define MAX_CONNECTION_ATTEMPTS 	     5
 #define PORT 						     "/dev/ttyUSB0"
-#define ACK_INPUT_MSG_SIZE				 8
+#define ACK_INPUT_MSG_SIZE				 50
 
 #define CONTROLLER_ADDRESS_PORT 		 "/dev/input/js0"
 #define CONTROLLER_AXIS_MAX_VALUE		32767
@@ -30,7 +30,7 @@
 #define READ_POSITION_M3					 9
 #define READ_POSITION_M4					 10
 
-speed_t BAUDRATE 	    				= B19200;
+speed_t BAUDRATE 	    				= B9600;
 
 
 
