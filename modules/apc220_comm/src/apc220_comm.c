@@ -21,8 +21,8 @@ bool    PANIC_MESSAGE   	  	= false;
 int 	controllerStartFlag1	= 0;
 int 	controllerInFlight		= 0;
 
-int 	*axis 					= NULL;
 
+int 	num_of_axis=0;
 
 int udpWriteSocket		= 0;
 struct sockaddr_in 		xplaneWriteAddress;
@@ -452,8 +452,8 @@ void apc220_read_task_func(void *arg)
 	int 	returnValue;
 	ssize_t length;
     char 	buffer[ACK_INPUT_MSG_SIZE+3];
-
     struct js_event 		jse;
+    int 	*axis 					= NULL;
     char    *motorBuffer;
 	int 	motorBytesWrite;
 	int 	controllerBytesRead;
@@ -466,20 +466,21 @@ void apc220_read_task_func(void *arg)
 	motorBytesWrite			   = 0;
 	controllerBytesRead        = 0;
 	motorBuffer		     	   = NULL;
+int count=0;
 
-
-
-	fcntl( controllerFd, F_SETFL, O_NONBLOCK );
-	//rt_task_set_periodic(NULL, TM_NOW, TM_INFINITE);
+    axis = (int *) calloc( num_of_axis, sizeof( int ) );
+	//fcntl( controllerFd, F_SETFL );
+	rt_task_set_periodic(NULL, TM_NOW, TM_INFINITE);
 
 	  while(1)
 	  {
 
-		  if(returnValue == RETURN_OK)
+		  	  if(returnValue == RETURN_OK)
 		          {
 			  	  	 // fprintf(stderr,"controller port: %d\n",controllerFd);
 		  			controllerBytesRead = read(controllerFd, &jse, sizeof( jse));
-		  			//fprintf(stderr,"bytesread: %d\n",controllerBytesRead);
+		  			fprintf(stderr,"bytesread: %d\n",controllerBytesRead);
+		  			fprintf(stderr, "counter: %d\n",count);
 		  			//rt_task_sleep	(5900);
 
 
@@ -494,6 +495,7 @@ void apc220_read_task_func(void *arg)
 		  						break;
 		  				}
 		  			 	 //fprintf(stderr, "X: %6d  Y: %6d Z: %6d  R: %6d  \n ", axis[0], axis[1], axis[2], axis[3] );
+		  			 	controllerBytesRead        = 0;
 
 		  			 	fflush(stdout);
 		  		 }
@@ -503,33 +505,33 @@ void apc220_read_task_func(void *arg)
 		  		 }
 		          }
 
+		  	count++;
+						//motorBuffer = xplane_controller_motors(axis[0], axis[1], axis[2], axis[3]);
+						 fprintf(stderr, "X: %s\r",motorBuffer);
 
-						motorBuffer = xplane_controller_motors(axis[0], axis[1], axis[2], axis[3]);
-						 //fprintf(stderr, "X: %s\n",motorBuffer);
-
-						motorBytesWrite = write(apcFd, motorBuffer, sizeof(motorBuffer));
-													usleep(700);
+						//motorBytesWrite = write(apcFd, motorBuffer, CONTROLLER_BUFFER_SIZE);
+						//usleep(10);
 						if(motorBytesWrite>0)
 						{
-
-							fprintf(stderr,"motors buffer: %s\n",motorBuffer);
-							//fprintf(stderr,"motors buffer: %d\n",motorBytesWrite);
+							//fprintf(stderr,"motors buffer: %s\n",motorBuffer);
 							fflush(stdout);
 							returnValue = RETURN_OK;
 
 						}
 
+
+
 		  if (returnValue == RETURN_OK)
 		  {
 		  buffer[0] 	  = '\0';
 		  length		  = 0;
-		  length = read(apcFd, &buffer, sizeof(buffer));
-		  usleep	(50);
+		  //length = read(apcFd, &buffer, sizeof(buffer));
+		 // usle	(1900);
 		  //fprintf(stderr,"size: %d\n",length);
-		  //aliveTasks.isReadTaskAlive=true;
+		  aliveTasks.isReadTaskAlive=true;
 				if (length == RETURN_ERROR)
 				{
-					//aliveTasks.isReadTaskAlive=false;
+					aliveTasks.isReadTaskAlive=false;
 
 				}
 				else if (length == RETURN_OK)
@@ -548,7 +550,7 @@ void apc220_read_task_func(void *arg)
 
 		        tcflush(controllerFd,TCIOFLUSH);
 		        tcflush(apcFd,TCIOFLUSH);
-		        //rt_task_wait_period(NULL);
+		        rt_task_wait_period(NULL);
 	  }
 }
 /* (END) APC220_READ_TASK_FUNC*/
@@ -622,14 +624,14 @@ int open_controller_port(void)
 {
 	    int 	returnValue;
 		int 	connectionAttempts;
-		int 	num_of_axis;
+
 		int 	num_of_buttons;
 		char 	name_of_controller[80];
 
 		/*init values*/
 		returnValue		      = RETURN_ERROR;
 		connectionAttempts    = 0;
-	    num_of_axis			  = 0;
+	   // num_of_axis			  = 0;
 		num_of_buttons		  = 0;
 		name_of_controller[0]   = '\0';
 
@@ -637,15 +639,15 @@ int open_controller_port(void)
 		  while (connectionAttempts < MAX_CONNECTION_ATTEMPTS && returnValue == RETURN_ERROR)
 		   {
 			/*Open Port */
-			  controllerFd = open (CONTROLLER_ADDRESS_PORT, O_RDONLY);
-			  fprintf(stderr,"Open Controller port: OK.%d\n",controllerFd);
+			  controllerFd = open (CONTROLLER_ADDRESS_PORT, O_RDONLY, O_NONBLOCK);
+			  fprintf(stderr,"Open Controller port: OK.\n");
 			 if(controllerFd>=0)
 			 {
 				 /*Configure settings in address struct*/
 				 ioctl( controllerFd, JSIOCGAXES, &num_of_axis );
 				 ioctl( controllerFd, JSIOCGBUTTONS, &num_of_buttons );
 				 ioctl( controllerFd, JSIOCGNAME(80), &name_of_controller );
-				 axis = (int *) calloc( num_of_axis, sizeof( int ) );
+
 
 				 returnValue = RETURN_OK;
 			 }
@@ -784,10 +786,10 @@ int open_port(void)
        {
     	 apc220_read_task_func(NULL);
      	  /*start tasks*/
-     	  /*returnValue = rt_task_start(&apc220_read_task,
+     	  returnValue = rt_task_start(&apc220_read_task,
      		   	 	 	 	 	 	  &apc220_read_task_func,
      			 	 	 	 	 	  NULL);
-*/
+
      	 /* returnValue = rt_task_start(&controller_read_task,
 									  &controller_read_task_func,
 									  NULL);*/
@@ -804,7 +806,7 @@ int open_port(void)
        }
 
 
-     close(controllerFd);
+     //close(controllerFd);
 
 	return (returnValue);
 }/* (END) APC_220_COMM_INIT*/
