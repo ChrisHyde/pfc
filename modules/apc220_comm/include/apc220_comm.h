@@ -18,6 +18,7 @@ speed_t BAUDRATE 	    				= B9600;
 
 /*Xenomai Tasks*/
 RT_TASK  apc220_read_task;
+RT_TASK  apc220_write_task;
 RT_TASK  apc220_connect_task;
 
 
@@ -25,6 +26,7 @@ struct  termios  portSettings;
 
 /*local functions*/
 void apc220_read_task_func(void *arg);
+void apc220_write_task_func(void *arg);
 void apc220_connect_task_func(void *arg);
 int  apc220_comm_init();
 

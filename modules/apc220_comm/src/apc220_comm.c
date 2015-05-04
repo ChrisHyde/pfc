@@ -27,6 +27,75 @@ int 	fd = 0;
  * Features     : ...
  *
  ******************************************************************************/
+void apc220_write_task_func(void *arg)
+{
+
+    char *buffer;
+    int bytesRead;
+    int returnValue;
+
+	/*init values*/
+    returnValue 	=  RETURN_OK;
+	bytesRead		= 0;
+	buffer  	    = NULL;
+    //int counter     = 0;
+
+	rt_task_set_periodic(NULL, TM_NOW, 6000*1000*10);
+
+	fprintf(stderr,"\n");
+	  while(1)
+	  {
+		        if (returnValue == RETURN_OK)
+				  {
+				  returnValue= rt_queue_bind (&acp220_outputQueue,
+						  	  	  	  	  	  acp220_outputQueueName,
+											  TM_NONBLOCK);
+				  }
+				  if (returnValue == RETURN_OK)
+				  {
+					  buffer = malloc(sizeof(*buffer));
+
+				  			bytesRead=rt_queue_read(&acp220_outputQueue,
+				  									buffer,
+													sizeof(buffer),
+													TM_NONBLOCK);
+
+					  if (bytesRead>0)
+					  {
+						  write(fd, buffer, sizeof(buffer));
+					  }
+					  else
+					  {
+
+					  }
+				  }
+				  else
+				  {
+					 // counter++;
+					 //fprintf(stderr,"aCounter %d\r",counter);
+					 returnValue=RETURN_OK; //start again
+				  }
+
+          tcflush(fd,TCIOFLUSH);
+          fflush(stdout);
+          fflush(stderr);
+	      rt_task_wait_period(NULL);
+      }
+}
+/* (END) APC220_WRITE_TASK_FUNC*/
+
+
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
 void apc220_read_task_func(void *arg)
 {
 
@@ -35,10 +104,10 @@ void apc220_read_task_func(void *arg)
 
 
 	/*init values*/
-	length		               = 0;
-	buffer[0] 	               = '\0';
+	length		    = 0;
+	buffer[0] 	    = '\0';
+	//int counter 	= 0;
 
-int counter =0;
 	rt_task_set_periodic(NULL, TM_NOW, 6000*1000*10);
 
 
@@ -51,7 +120,7 @@ int counter =0;
 
 				if (length <= 0)
 				{
-					//fprintf(stderr,"counter %d... \r",counter);
+					//fprintf(stderr,"bcounter %d... \r",counter);
 					//counter++;
 				}
 				else
@@ -135,6 +204,9 @@ void apc220_connect_task_func(void *arg)
 		   rt_task_start(&apc220_read_task,
 						  &apc220_read_task_func,
 						  NULL);
+		   rt_task_start(&apc220_write_task,
+						  &apc220_write_task_func,
+						  NULL);
 		   areTasksInitilized = TRUE;
 	   }
 	   fflush(stdout);
@@ -177,6 +249,14 @@ void apc220_connect_task_func(void *arg)
 	  {
 		 returnValue = rt_task_create(&apc220_read_task,
 									   "apc220_read_task",
+									   0,
+									   5,
+									   T_JOINABLE);
+	  }
+	  if (returnValue == RETURN_OK)
+	  {
+		 returnValue = rt_task_create(&apc220_write_task,
+									   "apc220_write_task",
 									   0,
 									   5,
 									   T_JOINABLE);
