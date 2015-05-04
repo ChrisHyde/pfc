@@ -68,7 +68,7 @@ typedef struct  {
 
 char*   acp220_inputQueueName  			= "apc220_inputQueue";
 char*   acp220_outputQueueName  		= "apc220_outputQueue";
-char*   write_from_xplane_queue_Name  	= "write_from_xplane_queue";
+char*   write_to_xplane_queue_Name  	= "write_from_xplane_queue";
 char*   read_from_xplane_queue_Name  	= "read_from_xplane_queue";
 char*   controller_inputQueueName  		= "controller_inputQueue";
 char*   autopilotQueueName  			= "autopilotQueue";

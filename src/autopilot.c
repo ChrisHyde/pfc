@@ -4,8 +4,6 @@
 #include <stdio.h>
 
 
-int SIMULATOR_ACTIVE = 0;
-
 
 /*******************************************************************************
  * Type         : ...
@@ -18,65 +16,26 @@ int SIMULATOR_ACTIVE = 0;
  * Features     : ...
  *
  ******************************************************************************/
-void xplane_activation_task_func(void *arg)
+void read_input_queues_task_func(void *arg)
 {
 	int	returnValue;
-	int xplane_shared_memory_fd;
-	int *mappedValue;
-	bool taskInitiated;
+
 	/*init values*/
 	returnValue 				= RETURN_OK;
-	xplane_shared_memory_fd     = 0;
-	mappedValue					= NULL;
-	taskInitiated				= FALSE;
 
-	SIMULATOR_ACTIVE=1;
 	rt_task_set_periodic(NULL, TM_NOW, 1000*1000*10);
+
 	  while(1)
 	    {
-		  xplane_shared_memory_fd = shm_open(XPLANE_SHM, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-		  returnValue= ftruncate(xplane_shared_memory_fd, sizeof(int));
-
-		  	if(xplane_shared_memory_fd<0)
-		  	{
-		  		returnValue=RETURN_ERROR;
-		  	}
-		  	mappedValue = mmap(NULL, sizeof(int),PROT_READ,
-		  					  MAP_SHARED, xplane_shared_memory_fd, 0);
-
-		   if(mappedValue == MAP_FAILED)
-			{
-				returnValue=RETURN_ERROR;
-			}
-
-		   /*TODO: enable when other application access shared memory to activate simulator*/
-		   //SIMULATOR_ACTIVE=mappedValue[0];
-
-		   munmap(mappedValue, sizeof(int));
-
-            if(returnValue == RETURN_OK)
-            {
-            	close( xplane_shared_memory_fd );
-
-            }
-
-            if(SIMULATOR_ACTIVE==1 && taskInitiated==FALSE)
-            {
-            	 SIMULATOR_ACTIVE=0;
-            	 taskInitiated=TRUE;
 
 
 
-            }
-            else
-            {
-            	/*TODO: shut down tasks and queues*/
-            }
+
 	        rt_task_wait_period(NULL);
 	    }
 
 
-}/*(END) XPLANE_ACTIVATION_TASK_FUNC*/
+}/*(END) READ_INPUT__QUEUES_TASK_FUNC*/
 
 
 int main(int argc,char *argv[])
@@ -90,17 +49,37 @@ int main(int argc,char *argv[])
 
 	 mlockall(MCL_CURRENT | MCL_FUTURE);
 
-	 /*Create Tasks*/
+	 /*Create Tasks*////////////////////////////////////////////////
 	  if (returnValue == RETURN_OK)
 	  {
-	  returnValue = rt_task_create(&xplane_activation_task,
-								  "xplane_activation_task",
+	  returnValue = rt_task_create(&read_input_queues_task,
+								  "read_input_queues_task",
 								  0,
-								  2,
+								  4,
 								  T_JOINABLE);
 	  }
 
-	  //APC220 Radio comunication Available
+	  /*Create Output Queues*//////////////////////////////////////
+	  if (returnValue == RETURN_OK)
+	  {
+	  returnValue = rt_queue_create(&acp220_outputQueue,
+			  	  	  	  	  	    acp220_outputQueueName,
+			  	  	  	  	        APC220_OUTPUT_BUFFER_SIZE,
+								    Q_UNLIMITED,
+								    Q_SHARED);
+	  }
+	  if (returnValue == RETURN_OK)
+	  {
+	  returnValue = rt_queue_create(&acp220_outputQueue,
+								    acp220_outputQueueName,
+								    APC220_OUTPUT_BUFFER_SIZE,
+								    Q_UNLIMITED,
+								    Q_SHARED);
+	  }
+
+
+
+	  /*Initialize Modules */////////////////////////////////////////
 	  if (returnValue == RETURN_OK)
 	  {
 	    returnValue = apc220_comm_init();

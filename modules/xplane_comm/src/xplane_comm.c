@@ -297,15 +297,15 @@ void xplane_write_task_func(void *arg)
 
 		  if (returnValue == RETURN_OK)
 		  {
-		  returnValue= rt_queue_bind (&autopilotQueue,
-									  autopilotQueueName,
+		  returnValue= rt_queue_bind (&write_to_xplane_queue,
+				  	  	  	  	  	  write_to_xplane_queue_Name,
 									  TM_NONBLOCK);
 		  }
 		  if (returnValue == RETURN_OK)
 		  {
 			  xplaneOutputDecimalValues = malloc(sizeof(*xplaneOutputDecimalValues));
 
-		  			bytesRead=rt_queue_read(&autopilotQueue,
+		  			bytesRead=rt_queue_read(&write_to_xplane_queue,
 		  									xplaneOutputDecimalValues,
 											sizeof(*xplaneOutputDecimalValues),
 											TM_NONBLOCK);

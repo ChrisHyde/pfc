@@ -19,6 +19,8 @@
 #define Motor3	9
 #define Motor4	0
 
+#define APC220_OUTPUT_BUFFER_SIZE			 50
+
 
 #define XPLANE_SHM "/xplane_shared_memory"
 
@@ -33,7 +35,7 @@ typedef struct  {
 }ST_Xplane_inputQueueValues;
 
 
-//void apc220_interface_read_task_func(void *arg);
-void xplane_activation_task_func(void *arg);
+
+void read_input_queues_task_func(void *arg);
 
 #endif /* GENERIC_H_ */
