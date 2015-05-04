@@ -4,6 +4,7 @@
 #include "generic.h"
 #include "apc220_comm.h"
 #include "xplane_comm.h"
+#include "controller_comm.h"
 
 
 
@@ -24,18 +25,7 @@
 
 RT_TASK  xplane_activation_task;
 
-typedef struct {
-	float     AcX;
-	float     AcY;
-	float     AcZ;
-	float     GyX;
-	float     GyY;
-	float     GyZ;
-	float	  M1;
-	float	  M2;
-	float	  M3;
-	float	  M4;
-}ST_apc220_inputQueueValues;
+
 
 
 typedef struct  {
@@ -43,9 +33,7 @@ typedef struct  {
 }ST_Xplane_inputQueueValues;
 
 
-void apc220_interface_read_task_func(void *arg);
+//void apc220_interface_read_task_func(void *arg);
 void xplane_activation_task_func(void *arg);
-void xplane_interface_read_task_func(void *arg);
-void xplane_interface_write_task_func(void *arg);
 
 #endif /* GENERIC_H_ */

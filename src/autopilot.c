@@ -28,10 +28,10 @@ void xplane_activation_task_func(void *arg)
 	returnValue 				= RETURN_OK;
 	xplane_shared_memory_fd     = 0;
 	mappedValue					= NULL;
-	taskInitiated				= false;
+	taskInitiated				= FALSE;
 
 	SIMULATOR_ACTIVE=1;
-	rt_task_set_periodic(NULL, TM_NOW, 1000000);
+	rt_task_set_periodic(NULL, TM_NOW, 1000*1000*10);
 	  while(1)
 	    {
 		  xplane_shared_memory_fd = shm_open(XPLANE_SHM, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -60,11 +60,11 @@ void xplane_activation_task_func(void *arg)
 
             }
 
-            if(SIMULATOR_ACTIVE==1 && taskInitiated==false)
+            if(SIMULATOR_ACTIVE==1 && taskInitiated==FALSE)
             {
             	 SIMULATOR_ACTIVE=0;
-            	 taskInitiated=true;
-            	 returnValue = xplane_comm_init();
+            	 taskInitiated=TRUE;
+
 
 
             }
@@ -91,36 +91,46 @@ int main(int argc,char *argv[])
 	 mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	 /*Create Tasks*/
-
 	  if (returnValue == RETURN_OK)
 	  {
 	  returnValue = rt_task_create(&xplane_activation_task,
 								  "xplane_activation_task",
 								  0,
-								  20,
+								  2,
 								  T_JOINABLE);
 	  }
 
-	  /*Start tasks*/
+	  //APC220 Radio comunication Available
 	  if (returnValue == RETURN_OK)
 	  {
 	    returnValue = apc220_comm_init();
 	  }
 
-
 	  if (returnValue == RETURN_OK)
-	   {
-		  returnValue = rt_task_start(&xplane_activation_task,
-									  &xplane_activation_task_func,
-									  NULL);
-	   }
+	  {
+		  returnValue = controller_comm_init();
+	  }
+	  if (returnValue == RETURN_OK)
+	  {
+	     returnValue = xplane_comm_init();
+	  }
+
+	  else
+	  {
+		  	  //start task apcqueue to Qt queue conversion and to xplane queue conversion
+
+	  }
+
+
+
+
 
 	while(1)
 	  {
         /*do nothing*/
 	  }
 
-fprintf(stderr,"retunrValue %d\n",returnValue);
+		fprintf(stderr,"retunrValue %d\n",returnValue);
 
 	return (returnValue);
 }

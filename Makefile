@@ -74,7 +74,7 @@ EXEC   =  $(OUTPUT_EXEC)
 #
 PFC_INCLUDE_DIR	= -I/usr/local/include/pfc
 PFC_LIBS_DIR	= -L/usr/local/lib/pfc
-INCLUDE_DIR	= 	  -Iinclude -I../modules/include  -I../modules/xplane_comm/include -I../modules/apc220_comm/include -I/usr/xenomai/include/ -I /usr/xenomai/  $(PFC_INCLUDE_DIR)	
+INCLUDE_DIR	= 	  -Iinclude -I../modules/include  -I../modules/xplane_comm/include -I../modules/apc220_comm/include -I../modules/controller_comm/include -I/usr/xenomai/include/ -I /usr/xenomai/  $(PFC_INCLUDE_DIR)	
 LIBS_DIR	=	-L. $(PFC_LIBS_DIR)
 
 #
@@ -82,7 +82,7 @@ LIBS_DIR	=	-L. $(PFC_LIBS_DIR)
 # 
 syslibs   = -L/usr/xenomai/lib -lpthread_rt -lxenomai -lpthread -lrt  -lnative  -lm
 
-LIBS= xplane_comm$(DEBUG_NAME) -l apc220_comm$(DEBUG_NAME)  $(syslibs)   
+LIBS= xplane_comm$(DEBUG_NAME) -l apc220_comm$(DEBUG_NAME) -l controller_comm$(DEBUG_NAME)  $(syslibs)   
 
 COMPILER          =  gcc -Werror  -fmessage-length=0   -fomit-frame-pointer --pipe -fPIC $(DEBUG_OPTIONS)  $(LIB_OS_OPTIONS)
 
