@@ -52,9 +52,9 @@ typedef struct  {
 	float     AcX;
 	float     AcY;
 	float     AcZ;
-	float     GyX;
-	float     GyY;
-	float     GyZ;
+	float     Pitch;
+	float     Roll;
+	float     Yaw;
 	float	  M1;
 	float	  M2;
 	float	  M3;
@@ -77,7 +77,6 @@ RT_TASK  xplane_write_task;
 RT_TASK  xplane_check_alive_task;
 
 /*local functions*/
-void xplane_check_alive_task_func(void *arg);
 void xplane_read_task_func(void *arg);
 void xplane_write_task_func(void *arg);
 int  xplane_comm_init();

@@ -83,33 +83,7 @@ return returnValue;
 }/*(END) BYTE_TO_FLOAT_FUNC*/
 
 
-/*******************************************************************************
- * Type         : ...
- * Name         : ...
- * Description  : ...
- * Globals      : ...
- * Input params : ...
- * Output params: ...
- * Return value : ...
- * Features     : ...
- *
- ******************************************************************************/
-void xplane_check_alive_task_func(void *arg)
-{
 
-
-
-	    rt_task_set_periodic(NULL, TM_NOW, 70000000);
-
-	    while(1)
-	    {
-
-
-	        rt_task_wait_period(NULL);
-	    }
-
-
-}/*(END) XPLANE_CHECK_ALIVE_TASK*/
 
 
 /*******************************************************************************
@@ -127,71 +101,143 @@ void xplane_read_task_func(void *arg)
 {
 
 	char buffer[BUFFERSIZE];
+	char UdpHeader[UDP_HEADER_SIZE];
+	//char UdpInbyteValues[UDP_DATA_SIZE];
 	int returnValue;
 	int connectionAttempts;
+	int headerPosCounter;
+	int dataPosCounter;
+	int indexCounter;
+	int bytesRecieved;
+	int currentDataPos;
 	struct sockaddr_in xplaneReadAddress;
 	socklen_t addr_size;
 
-	    /*init values*/
-	    connectionAttempts = 0;
-	    returnValue        = RETURN_ERROR;
+	/*init values*/
+	connectionAttempts 			= 0;
+	bytesRecieved	   			= 0;
+	headerPosCounter   			= 0;
+	dataPosCounter			    = 0;
+	indexCounter				= 0;
+	currentDataPos				= 0;
+	buffer[BUFFERSIZE]			= '\0';
+	UdpHeader[UDP_HEADER_SIZE]  = '\0';
+	returnValue        			= RETURN_OK;
+
 
 	    /*Create UDP socket*/
 	      udpReadSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	      fprintf(stderr,"Read Socket:%d\n",udpReadSocket);
 	     if(udpReadSocket>=0)
 	     {
+             /*Configure settings in address struct*/
+	    	 memset((char*) &xplaneReadAddress, 0, sizeof(xplaneReadAddress));
 
-	    	 /*Configure settings in address struct*/
-	    	 memset((char *) &xplaneReadAddress, 0, sizeof(xplaneReadAddress));
-	    	 xplaneReadAddress.sin_family = AF_INET;
-	    	 xplaneReadAddress.sin_port = htons(XPLANE_RECIEVE_PORT);
+	    	 xplaneReadAddress.sin_family      = AF_INET;
+	    	 xplaneReadAddress.sin_port        = htons(XPLANE_RECIEVE_PORT);
 	    	 xplaneReadAddress.sin_addr.s_addr = inet_addr(LOCAL_IP_ADDRESS);
 
 	    	 /*Initialize size variable to be used later on*/
-	    	 addr_size = sizeof xplaneReadAddress;
-	    	 returnValue=bind(udpReadSocket , (struct sockaddr*)&xplaneReadAddress, sizeof(xplaneReadAddress));
-
-
+	    	 addr_size   = sizeof xplaneReadAddress;
+	    	 returnValue = bind(udpReadSocket,
+	    			 	 	 	(struct sockaddr*)&xplaneReadAddress,
+	    			 	 	 	sizeof(xplaneReadAddress));
 	     }
 	     else
 	     {
 	    	 sleep(2);
-	    	 fprintf(stderr," Openning socket Failed: %d, %d \r",connectionAttempts,
-	    			 returnValue);
+	    	 fprintf(stderr," Openning socket Failed: %d, %d \r",
+	    			 connectionAttempts,returnValue);
 	    	 returnValue=RETURN_ERROR;
 	     }
 
-	if(returnValue==RETURN_OK)
+if(returnValue==RETURN_OK)
+{
+  rt_task_set_periodic(NULL, TM_NOW, 2000*1000*10);
+
+  while(1)
+  {
+	  fflush(stdout);
+	  fflush(stderr);
+	  memset(buffer,'\0', BUFFERSIZE);
+	  memset(UdpHeader,'\0', UDP_HEADER_SIZE);
+	  bytesRecieved = recvfrom(udpReadSocket,
+							   buffer,
+							   BUFFERSIZE,
+							   0,
+							   (struct sockaddr *) &xplaneReadAddress,
+							   &addr_size);
+	if(bytesRecieved<0)
 	{
-		rt_task_set_periodic(NULL, TM_NOW, 70000000);
-
-		  while(1)
-		  {   fflush(stdout);
-			  memset(buffer,'\0', BUFFERSIZE);
-		    int i= recvfrom(udpReadSocket, buffer, BUFFERSIZE, 0, (struct sockaddr *) &xplaneReadAddress, &addr_size);
-		    //fprintf(stderr," RECIEVING DATA: %s  -> %d \n",buffer,i);
-int x;
-
-		    for(x=0;x<i;x++)
-		    {
-		    sprintf(buffer, "%d", buffer[x]);
-		    //fprintf(stderr," %s",buffer);
-		    //write in queue
-		    /*returnValue = rt_queue_write(&xplane_inputQueue,
-										 &inputVectors,
-										 sizeof(inputVectors),
-										 Q_URGENT);*/
-		    }
-		    //fprintf(stderr,"\n");
-		    //fprintf(stderr,"\n");
-
-
-		      rt_task_wait_period(NULL);
-	       }
+	 returnValue=RETURN_ERROR;
 	}
+	else
+	{
+	 returnValue=RETURN_OK;
+	}
+
+    if(returnValue==RETURN_OK)
+    {
+    for(headerPosCounter=0;headerPosCounter<UDP_HEADER_SIZE;headerPosCounter++)
+	{
+	  UdpHeader[headerPosCounter]=buffer[headerPosCounter];
+
+	}
+	  UdpHeader[UDP_HEADER_SIZE]='\0';
+	  currentDataPos=UDP_INDEX_START;
+
+	  if(strcmp(UdpHeader,UDP_HEADER_INSTRUCTION)==RETURN_OK)
+	  {
+	    for(indexCounter=0;indexCounter<XPLANE_BASIC_INDEXES_USED;indexCounter++)
+		{
+	    	xplaneByteInputValues[indexCounter][0]=buffer[currentDataPos];
+	    	//fprintf(stderr,"\n Index: %d \n",buffer[currentDataPos]);
+	        currentDataPos+=UDP_INDEX_SIZE;
+
+
+              //UDP_DATA_TOTAL_SIZE + 1 added because first position is for index
+	      for(dataPosCounter=1;dataPosCounter<UDP_DATA_TOTAL_SIZE+1;dataPosCounter++)
+	      {
+	    	  xplaneByteInputValues[indexCounter][dataPosCounter]=buffer[currentDataPos];
+	    	  currentDataPos++;
+	    	  //fprintf(stderr," %d ",xplaneByteInputValues[indexCounter][dataPosCounter]);
+	      }
+
+		}
+	    returnValue = byte_to_float_func(xplaneByteInputValues);
+				/*int i,j=0;
+				for (i=0;i<XPLANE_BASIC_INDEXES_USED;i++)
+				{
+					for(j=0;j<UDP_DATA_GROUPS+1;j++)
+					{
+						fprintf(stderr,"%f\n",xplaneInputDecimalValues.xplaneInputDecimalValues[i][j]);
+					}
+				}
+				fprintf(stderr,"\n\n");*/
+
+		   if (returnValue==RETURN_OK)
+		   {
+			  returnValue = rt_queue_write(&read_from_xplane_queue,
+										 &xplaneInputDecimalValues,
+										 sizeof(xplaneInputDecimalValues),
+										 Q_URGENT);
+		   }
+      }
+	  else
+	  {
+       //Do nothing
+	  }
+	}
+
+
+    tcflush(udpReadSocket,TCIOFLUSH);
+    fflush(stdout);
+    fflush(stderr);
+    rt_task_wait_period(NULL);
+  }
+ }
 }
 /* (END) XPLANE_READ_TASK_FUNC*/
+
 
 /*******************************************************************************
  * Type         : ...
@@ -220,7 +266,7 @@ void xplane_write_task_func(void *arg)
 
 	    /*Create UDP socket*/
 	      udpWriteSocket = socket(PF_INET, SOCK_DGRAM, 0);
-	      fprintf(stderr,"Write Socket:%d\n",udpWriteSocket);
+	      fprintf(stderr,"Xplane Socket: OK.\n");
 	     if(udpWriteSocket>=0)
 	     {
 	    	 /*Configure settings in address struct*/
@@ -236,29 +282,31 @@ void xplane_write_task_func(void *arg)
 	     else
 	     {
 	    	 sleep(2);
-	    	 fprintf(stderr," Openning socket Failed: %d, %d \r",connectionAttempts,
+	    	 fprintf(stderr,"Xplane Socket: ERROR: %d, %d \r",connectionAttempts,
 	    			 returnValue);
 	    	 returnValue=RETURN_ERROR;
 	     }
 
 	if(returnValue==RETURN_OK)
 	{
-		rt_task_set_periodic(NULL, TM_NOW, 100000000);
-		 if (returnValue == RETURN_OK)
-				  {
-				  returnValue= rt_queue_bind (&acp220_inputQueue,
-						  	  	  	          acp220_inputQueueName,
-						  	  	  	          TM_INFINITE);
-				  }
+		rt_task_set_periodic(NULL, TM_NOW, 1000*1000*10);
+
 	  while(1)
 	  {
 
+
+		  if (returnValue == RETURN_OK)
+		  {
+		  returnValue= rt_queue_bind (&autopilotQueue,
+									  autopilotQueueName,
+									  TM_NONBLOCK);
+		  }
 		  if (returnValue == RETURN_OK)
 		  {
 			  xplaneOutputDecimalValues = malloc(sizeof(*xplaneOutputDecimalValues));
 
-		  			bytesRead=rt_queue_read(&acp220_inputQueue,
-		  									 xplaneOutputDecimalValues,
+		  			bytesRead=rt_queue_read(&autopilotQueue,
+		  									xplaneOutputDecimalValues,
 											sizeof(*xplaneOutputDecimalValues),
 											TM_NONBLOCK);
 		  }
@@ -267,15 +315,17 @@ void xplane_write_task_func(void *arg)
 		  											xplaneOutputDecimalValues->AcX,
 		  											xplaneOutputDecimalValues->AcY,
 		  											xplaneOutputDecimalValues->AcZ,
-		  											xplaneOutputDecimalValues->GyX,
-		  											xplaneOutputDecimalValues->GyY,
-		  											xplaneOutputDecimalValues->GyZ,
+		  											xplaneOutputDecimalValues->Pitch,
+		  											xplaneOutputDecimalValues->Roll,
+		  											xplaneOutputDecimalValues->Yaw,
 		  											xplaneOutputDecimalValues->M1,
 		  											xplaneOutputDecimalValues->M2,
 		  											xplaneOutputDecimalValues->M3,
 		  											xplaneOutputDecimalValues->M4,
 		  											bytesRead,
 		  											sizeof(*xplaneOutputDecimalValues));*/
+		  if (bytesRead>0)
+		  {
 		             union UN_Byte_float_transformation data;
 
 
@@ -287,21 +337,21 @@ void xplane_write_task_func(void *arg)
 		             buffer[2]=data.byteValue[2];
 		             buffer[3]=data.byteValue[3];
 		             buffer[UDP_HEADER_SIZE]=0;
-		             buffer[UDP_INDEX_START]=XPLANE_ANGULAR_VELOCITY_INDEX;
+		             buffer[UDP_INDEX_START]=XPLANE_PITCH_ROLL_INDEX;
 		             buffer[UDP_INDEX_START+1]=0;
 		             buffer[UDP_INDEX_START+2]=0;
 		             buffer[UDP_INDEX_START+3]=0;
-		             data.floatValue = xplaneOutputDecimalValues->GyX;
+		             data.floatValue = xplaneOutputDecimalValues->Pitch;
 		             buffer[UDP_DATA_START]=data.byteValue[0];
 		             buffer[UDP_DATA_START+1]=data.byteValue[1];
 		             buffer[UDP_DATA_START+2]=data.byteValue[2];
 		             buffer[UDP_DATA_START+3]=data.byteValue[3];
-		             data.floatValue = xplaneOutputDecimalValues->GyY;
+		             data.floatValue = xplaneOutputDecimalValues->Roll;
 		             buffer[UDP_DATA_START+UDP_DATA_SIZE]=data.byteValue[0];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+1]=data.byteValue[1];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+2]=data.byteValue[2];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+3]=data.byteValue[3];
-					 data.floatValue = xplaneOutputDecimalValues->GyZ;
+					 data.floatValue = xplaneOutputDecimalValues->Yaw;
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE]=data.byteValue[0];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+1]=data.byteValue[1];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+2]=data.byteValue[2];
@@ -378,42 +428,21 @@ void xplane_write_task_func(void *arg)
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+2]=data.byteValue[2];
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+3]=data.byteValue[3];
 
+					 counter++;
+					fprintf(stderr,"\r%d",counter);
+					free(xplaneOutputDecimalValues);
 
-
-		             	// int i=0;
-		             	 /*for(i=0;i<82;i++)
-		             	 {
-		             		fprintf(stderr,"%d ",buffer[i]);
-		             	 }*/
-
-			      //fprintf(stderr,"buffer %d\n",buffer[2]);
-			      //fprintf(stderr,"bytes %d\n",data.byteValue[1]);
-			      //fprintf(stderr,"bytes %d\n",data.byteValue[2]);
-			      //fprintf(stderr,"bytes %d\n",data.byteValue[3]);
-
-
-         if (bytesRead<0)
+					sendto(udpWriteSocket,buffer,BUFFERSIZE,0,(struct sockaddr *)&xplaneWriteAddress,addr_size);
+					tcflush(udpWriteSocket,TCIOFLUSH);
+					memset(&buffer[0], 0, sizeof(buffer));
+		 }
+		 else
          {
-          // fprintf(stderr,"transfer error \r\n");
-           //returnValue=rt_queue_unbind(&acp220_inputQueue) ;
-         }
-         else
-         {
-         counter++;
-           fprintf(stderr,"\r%d",counter);
-		  free(xplaneOutputDecimalValues);
-
-
-		  //fprintf(stderr,"AccX %d---->bytes: %d\n",xplaneOutputDecimalValues->AcX,bytesRead);
-
-
-		  sendto(udpWriteSocket,buffer,BUFFERSIZE,0,(struct sockaddr *)&xplaneWriteAddress,addr_size);
-		  tcflush(udpWriteSocket,TCIOFLUSH);
-		  memset(&buffer[0], 0, sizeof(buffer));
+           //fprintf(stderr,"transfer error \r");
+			 returnValue=RETURN_OK; //start again
          }
 	      rt_task_wait_period(NULL);
       }
-	  //returnValue = rt_queue_unbind(&acp220_inputQueue) ;
 	}
 }
 /* (END) XPLANE_WRITE_TASK_FUNC*/
@@ -437,57 +466,46 @@ void xplane_write_task_func(void *arg)
 	  int returnValue;
 
 	  /*init values*/
-	  returnValue 						  = 0;
+	  returnValue 	= RETURN_OK;
 
 	 returnValue = rt_task_create(&xplane_read_task,
 								   "xplane_read_task",
 								   0,
-								   50,
+								   3,
 								   T_JOINABLE);
 
-	 /*returnValue = rt_task_create(&xplane_write_task,
-	 								   "xplane_write_task",
-	 								   0,
-	 								   99,
-	 								   T_JOINABLE);*/
-	 returnValue = rt_task_create(&xplane_check_alive_task,
-								   "xplane_check_alive_task",
+	 returnValue = rt_task_create(&xplane_write_task,
+								   "xplane_write_task",
 								   0,
-								   20,
+								   3,
 								   T_JOINABLE);
 
 
-	 if (returnValue == RETURN_OK)
-	   {
-		 returnValue = rt_queue_create(&xplane_inputQueue,
-									   xplane_inputQueueName,
-									   BUFFERSIZE,
-									   Q_UNLIMITED,
-									   Q_SHARED);
-	   }
+   if (returnValue == RETURN_OK)
+   {
+	 returnValue = rt_queue_create(&read_from_xplane_queue,
+									read_from_xplane_queue_Name,
+									BUFFERSIZE,
+									Q_UNLIMITED,
+									Q_SHARED);
+   }
 
-     if (returnValue == RETURN_OK)
-       {
+   if (returnValue == RETURN_OK)
+   {
+	  /*start tasks*/
+	  returnValue = rt_task_start(&xplane_write_task,
+								 &xplane_write_task_func,
+								 NULL);
 
-     	  /*start tasks*/
+	  returnValue = rt_task_start(&xplane_read_task,
+								  &xplane_read_task_func,
+								  NULL);
 
-     	 /*returnValue = rt_task_start(&xplane_write_task,
-     	      		   	 	 	 	 &xplane_write_task_func,
-     	      			 	 	 	 NULL);*/
-     	  /*returnValue = rt_task_start(&xplane_read_task,
-     	     		   	 	 	 	 	 	  &xplane_read_task_func,
-     	     			 	 	 	 	 	  NULL);*/
-     	 /* returnValue = rt_task_start(&xplane_check_alive_task,
-									  &xplane_check_alive_task_func,
-									  NULL);*/
-       }
-       else
-       {
-
-     	  fprintf(stderr,"X-Plane connection error\n");
-       }
-
-
+   }
+   else
+   {
+	  fprintf(stderr,"X-Plane module error\n");
+   }
 
 	return (returnValue);
 }/* (END) XPLANE_COMM_INIT*/

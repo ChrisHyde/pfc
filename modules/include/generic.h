@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 #include <linux/joystick.h>
 #include <math.h>
-#include <pthread.h>
+
 
 #include <linux/kernel.h>
 
@@ -46,15 +46,37 @@
 #define RETURN_ERROR 				 -1
 
 typedef int bool;
-#define true  1
-#define false 0
-
-char*   acp220_inputQueueName  = "apc220_inputQueue";
-char*   xplane_inputQueueName  = "xplane_inputQueue";
+#define TRUE  1
+#define FALSE 0
 
 
-RT_QUEUE acp220_inputQueue; /*LIFO style queue*/
-RT_QUEUE xplane_inputQueue; /*LIFO style queue*/
+typedef struct  {
+	float     AcX;
+	float     AcY;
+	float     AcZ;
+	float     Pitch;
+	float     Roll;
+	float     Yaw;
+	float	  M1;
+	float	  M2;
+	float	  M3;
+	float	  M4;
+}ST_Queue_Packet;
+
+
+
+
+char*   acp220_inputQueueName  			= "apc220_inputQueue";
+char*   write_from_xplane_queue_Name  	= "write_from_xplane_queue";
+char*   read_from_xplane_queue_Name  	= "read_from_xplane_queue";
+char*   controller_inputQueueName  		= "controller_inputQueue";
+char*   autopilotQueueName  			= "autopilotQueue";
+
+RT_QUEUE acp220_inputQueue;		 /*LIFO style queue*/
+RT_QUEUE write_to_xplane_queue;  /*LIFO style queue*/
+RT_QUEUE read_from_xplane_queue; /*LIFO style queue*/
+RT_QUEUE controller_inputQueue;  /*LIFO style queue*/
+RT_QUEUE autopilotQueue;  /*LIFO style queue*/
 
 
 
