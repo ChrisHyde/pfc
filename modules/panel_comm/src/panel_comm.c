@@ -28,7 +28,7 @@
  * Features     : ...
  *
  ******************************************************************************/
- int xplane_comm_init()
+ int panel_comm_init()
 {
 	  int returnValue;
 
