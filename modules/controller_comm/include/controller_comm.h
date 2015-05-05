@@ -9,7 +9,7 @@
 #define CONTROLLER_AXIS_MIN_VALUE		-32767
 #define CONTROLLER_BUFFER_SIZE          24
 #define CONTROLLER_MOTOR_BUFFER_SIZE	3
-#define HOVER_SPEED						60
+#define HOVER_SPEED						11
 #define BUFFERSIZE 				  		90 //Max length of buffer
 
 #define MAX_CONNECTION_ATTEMPTS   		5

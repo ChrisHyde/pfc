@@ -45,6 +45,10 @@
 #define RETURN_OK 					  0
 #define RETURN_ERROR 				 -1
 
+
+#define XPLANE_UNSED_VALUE		   	   -999
+
+
 typedef int bool;
 #define TRUE  1
 #define FALSE 0

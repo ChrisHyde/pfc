@@ -127,17 +127,17 @@ int xplane_controller_motors(int X,int Y,int Z,int R)
 			//yaw
 			if (X<0)
 			{   xplane2XMotorValue = (HOVER_SPEED+((X*(100-HOVER_SPEED))/CONTROLLER_AXIS_MIN_VALUE));
-			    motor1=HOVER_SPEED;
-			    motor2=xplane2XMotorValue;
-			    motor3=HOVER_SPEED;
-				motor4=xplane2XMotorValue;
+			    motor1=xplane2XMotorValue;
+			    motor2=HOVER_SPEED;
+			    motor3=xplane2XMotorValue;
+				motor4=HOVER_SPEED;
 			}
 			if (X>0)
 			{   xplane2XMotorValue =(HOVER_SPEED+((X*(100-HOVER_SPEED))/CONTROLLER_AXIS_MAX_VALUE));
-				motor1=xplane2XMotorValue;
-				motor2=HOVER_SPEED;
-				motor3=xplane2XMotorValue;
-				motor4=HOVER_SPEED;
+				motor1=HOVER_SPEED;
+				motor2=xplane2XMotorValue;
+				motor3=HOVER_SPEED;
+				motor4=xplane2XMotorValue;
 			}
 			//pitch
 			if (Y<0)
@@ -208,12 +208,6 @@ int xplane_controller_motors(int X,int Y,int Z,int R)
 								 &buffer,
 								 sizeof(buffer),
 								 Q_URGENT);
-
-
-
-	fflush(stdout);
-
-
 
 	return(returnValue);
 }/*(END) XPLANE_CONTROLLER_MOTORS*/
@@ -299,7 +293,7 @@ void controller_read_task_func(void *arg)
 			 				break;
 			 		}
 			 //fprintf(stderr, "X: %6d  Y: %6d Z: %6d  R: %6d  \r ", axis[0], axis[1], axis[2], axis[3] );
-             fflush(stdout);
+
              xplane_controller_motors(axis[0], axis[1], axis[2], axis[3]);
 		}
 	}
@@ -342,7 +336,7 @@ void controller_read_task_func(void *arg)
 	 returnValue = rt_task_create(&controller_read_task,
 								   "controller_read_task",
 								   0,
-								   5,
+								   10,
 								   T_JOINABLE);
 
 

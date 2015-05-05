@@ -20,12 +20,14 @@
 #define Motor4	0
 
 #define APC220_OUTPUT_BUFFER_SIZE			 50
+#define XPLANE_OUTPUT_BUFFER_SIZE			 24
+#define CONTROLLER_OUTPUT_BUFFER_SIZE		 24
 
 
 #define XPLANE_SHM "/xplane_shared_memory"
 
 
-RT_TASK  xplane_activation_task;
+RT_TASK  read_input_queues_task;
 
 
 
