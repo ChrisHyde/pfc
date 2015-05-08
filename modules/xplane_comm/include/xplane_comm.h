@@ -6,7 +6,7 @@
 
 
 
-#define BUFFERSIZE 				  	90 //Max length of buffer
+#define BUFFERSIZE 				  	100 //Max length of buffer
 #define XPLANE_IP_ADDRESS 	      	"192.168.1.22"
 #define LOCAL_IP_ADDRESS    	  	"192.168.1.17"
 #define XPLANE_SEND_PORT 		  	49000   //The port on which to listen for incoming data
@@ -35,7 +35,7 @@
 #define XPLANE_UNSED_VALUE		   	-999
 
 /*Xplane index definitions*/
-#define XPLANE_BASIC_INDEXES_USED      2
+#define XPLANE_BASIC_INDEXES_USED      3
 #define XPLANE_G_FORCES_INDEX	       4
 #define XPLANE_ANGULAR_MOMENTS_INDEX   15
 #define XPLANE_ANGULAR_VELOCITY_INDEX  16
@@ -44,9 +44,11 @@
 
 
 
+
 typedef struct  {
 	float xplaneInputDecimalValues[XPLANE_BASIC_INDEXES_USED][UDP_DATA_GROUPS+1];
 }ST_Xplane_inputDecimalVectors;
+
 
 typedef struct  {
 	float     AcX;

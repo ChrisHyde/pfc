@@ -345,7 +345,7 @@ void controller_read_task_func(void *arg)
 	   {
 		 returnValue = rt_queue_create(&controller_inputQueue,
 				 	 	 	 	 	 	controller_inputQueueName,
-				 	 	 	 	 	 	BUFFERSIZE,
+				 	 	 	 	 	 	CONTROLLER_BUFFER_SIZE,
 				 	 	 	 	 	 	Q_UNLIMITED,
 				 	 	 	 	 	 	Q_SHARED);
 	   }

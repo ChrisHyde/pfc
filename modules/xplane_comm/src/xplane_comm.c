@@ -83,9 +83,6 @@ return returnValue;
 }/*(END) BYTE_TO_FLOAT_FUNC*/
 
 
-
-
-
 /*******************************************************************************
  * Type         : ...
  * Name         : ...
@@ -112,6 +109,9 @@ void xplane_read_task_func(void *arg)
 	int currentDataPos;
 	struct sockaddr_in xplaneReadAddress;
 	socklen_t addr_size;
+	float pitch,roll,yaw,alt;
+	float m1,m2,m3,m4;
+	float xplaneInputfloatValues[8];
 
 
 
@@ -160,6 +160,7 @@ if(returnValue==RETURN_OK)
   {
 	  fflush(stdout);
 	  fflush(stderr);
+	  xplaneInputfloatValues[0] = '\0';
 	  memset(buffer,'\0', BUFFERSIZE);
 	  memset(UdpHeader,'\0', UDP_HEADER_SIZE);
 	  bytesRecieved = recvfrom(udpReadSocket,
@@ -216,11 +217,37 @@ if(returnValue==RETURN_OK)
 				}
 				fprintf(stderr,"\n\n");*/
 
-		   if (returnValue==RETURN_OK)
+	    pitch	= xplaneInputDecimalValues.xplaneInputDecimalValues[0][1];
+	    roll	= xplaneInputDecimalValues.xplaneInputDecimalValues[0][2];
+	    yaw		= xplaneInputDecimalValues.xplaneInputDecimalValues[0][3];
+	    alt		= xplaneInputDecimalValues.xplaneInputDecimalValues[1][4];
+	    m1		= xplaneInputDecimalValues.xplaneInputDecimalValues[2][1];
+	    m2		= xplaneInputDecimalValues.xplaneInputDecimalValues[2][2];
+	    m3		= xplaneInputDecimalValues.xplaneInputDecimalValues[2][3];
+	    m4		= xplaneInputDecimalValues.xplaneInputDecimalValues[2][4];
+	    xplaneInputfloatValues[0]=pitch;
+	    xplaneInputfloatValues[1]=roll;
+	    xplaneInputfloatValues[2]=yaw;
+	    xplaneInputfloatValues[3]=alt;
+	    xplaneInputfloatValues[4]=m1;
+	    xplaneInputfloatValues[5]=m2;
+	    xplaneInputfloatValues[6]=m3;
+	    xplaneInputfloatValues[7]=m4;
+
+/*fprintf(stderr,"pitch %f\n",pitch);
+fprintf(stderr,"roll %f\n",roll);
+fprintf(stderr,"yaw %f\n",yaw);
+fprintf(stderr,"alt %f\n",alt);
+fprintf(stderr,"m1 %f\n",m1);
+fprintf(stderr,"m2 %f\n",m2);
+fprintf(stderr,"m3 %f\n",m3);
+fprintf(stderr,"m4 %f\n",m4);*/
+
+      if (returnValue==RETURN_OK)
 		   {
 			  returnValue = rt_queue_write(&read_from_xplane_queue,
-										 &xplaneInputDecimalValues,
-										 sizeof(xplaneInputDecimalValues),
+										 &xplaneInputfloatValues,
+										 sizeof(xplaneInputfloatValues),
 										 Q_URGENT);
 		   }
       }
@@ -446,6 +473,7 @@ void xplane_write_task_func(void *arg)
 
 
 					sendto(udpWriteSocket,buffer,BUFFERSIZE,0,(struct sockaddr *)&xplaneWriteAddress,addr_size);
+					//data.byteValue=NULL;
 
 		 }
 		 else
@@ -456,7 +484,7 @@ void xplane_write_task_func(void *arg)
 		  tcflush(udpWriteSocket,TCIOFLUSH);
 		  fflush(stdout);
 		  fflush(stderr);
-		  data.byteValue=NULL;
+
 		  memset(&buffer[0], 0, sizeof(buffer));
 		  free(xplaneOutputDecimalValues);
 	      rt_task_wait_period(NULL);

@@ -21,8 +21,11 @@ void read_input_queues_task_func(void *arg)
 	int	returnValue;
     int apc220bytesRead;
     int controllerBytesRead;
+    int xplaneBytesRead;
     char acp220buffer[APC220_OUTPUT_BUFFER_SIZE];
     char controllerBuffer[CONTROLLER_OUTPUT_BUFFER_SIZE];
+    //char xplaneBuffer[XPLANE_OUTPUT_BUFFER_SIZE];
+    float  xplaneInputfloatValues[8];
     char stringMotor1[3];
     char stringMotor2[3];
     char stringMotor3[3];
@@ -33,8 +36,10 @@ void read_input_queues_task_func(void *arg)
 	returnValue 		= RETURN_OK;
 	apc220bytesRead		= 0;
 	controllerBytesRead = 0;
+	xplaneBytesRead		= 0;
 	acp220buffer[0]		= '\0';
 	controllerBuffer[0] = '\0';
+	//xplaneBuffer[0] 	= '\0';
 	stringMotor1[0]		= '\0';
 	stringMotor2[0]		= '\0';
 	stringMotor3[0]		= '\0';
@@ -54,10 +59,12 @@ void read_input_queues_task_func(void *arg)
 			controllerBytesRead = 0;
 			acp220buffer[0]		= '\0';
 			controllerBuffer[0] = '\0';
+			//xplaneBuffer[0] 	= '\0';
 			stringMotor1[0]		= '\0';
 			stringMotor2[0]		= '\0';
 			stringMotor3[0]		= '\0';
 			stringMotor4[0]		= '\0';
+			xplaneInputfloatValues[0] = '\0';
 			m1					= 0.0;
 			m2					= 0.0;
 			m3					= 0.0;
@@ -80,12 +87,15 @@ void read_input_queues_task_func(void *arg)
 				   //APC220 Disconnected /////////////////////////////////////////////////////
 				   if(apc220bytesRead<=0)
 				   {
+
+
 					   returnValue= rt_queue_bind (&controller_inputQueue,
 							   	   	   	   	   	   controller_inputQueueName,
 												   TM_NONBLOCK);
 
 					   if (returnValue == RETURN_OK)
 					   {
+
 						   controllerBytesRead=rt_queue_read(&controller_inputQueue,
 															 controllerBuffer,
 															 sizeof(controllerBuffer),
@@ -127,14 +137,11 @@ void read_input_queues_task_func(void *arg)
 								   stringMotor3[1]=controllerBuffer[5];
 								   stringMotor4[0]=controllerBuffer[6];
 								   stringMotor4[1]=controllerBuffer[7];
-
 								   m1=atof(stringMotor1)/1000;
 								   m2=atof(stringMotor2)/1000;
 								   m3=atof(stringMotor3)/1000;
 								   m4=atof(stringMotor4)/1000;
-
 							   }
-
 							   queue_Packet.AcX 	= XPLANE_UNSED_VALUE;
 							   queue_Packet.AcY		= XPLANE_UNSED_VALUE;
 							   queue_Packet.AcZ		= XPLANE_UNSED_VALUE;
@@ -154,16 +161,65 @@ void read_input_queues_task_func(void *arg)
 							   fprintf(stderr," %f\n",queue_Packet.M3);
 							   fprintf(stderr," %f\n",queue_Packet.M4);*/
 
-                            rt_queue_write(&write_to_xplane_queue,
+                           returnValue = rt_queue_write(&write_to_xplane_queue,
 											 &queue_Packet,
 											 sizeof(queue_Packet),
 											 Q_URGENT);
+						   }
+
+						   //Send Xplane to Qt
+                           if (returnValue == RETURN_OK)
+                           {
+                        	   returnValue= rt_queue_bind (&read_from_xplane_queue,
+                        			   	   	   	   	   	   read_from_xplane_queue_Name,
+														   TM_NONBLOCK);
+
+							   if (returnValue == RETURN_OK)
+							   {
+								   xplaneBytesRead=rt_queue_read(&read_from_xplane_queue,
+										   	   	   	   	   	   	   	  &xplaneInputfloatValues,
+																	 sizeof(xplaneInputfloatValues),
+																	 TM_NONBLOCK);
+
+								   if(xplaneBytesRead<=0)
+								   {
+
+									   //Control error reports
+								   }
+								   else
+								   {
+									   /*int j=0;
+										for(j=0;j<7;j++)
+										{
+											fprintf(stderr,"%f\n",xplaneInputfloatValues[j]);
+										}
+										fprintf(stderr,"\n\n");*/
+
+									   returnValue = rt_queue_write(&write_to_panel_queue,
+																	 &xplaneInputfloatValues,
+																	 sizeof(xplaneInputfloatValues),
+																	 Q_URGENT);
+									   if (returnValue == RETURN_ERROR)
+									   {
+
+									   }
+									   else
+									   {
+										   /*Do nothing*/
+									   }
+
+								   }
+
+
+							   }
+                           }
+
 
                                //send controller Data to Xplane
 							   //send Xplane to Qt
 							   //send Qt to Xplane
 						   }
-					   }
+
 				   }
 /*******************************************************************************************************************
 ******************************************************************************************************************/
@@ -186,10 +242,6 @@ void read_input_queues_task_func(void *arg)
 		   {
 
 		   }
-
-
-
-
 
 	        rt_task_wait_period(NULL);
 	    }
@@ -215,7 +267,7 @@ int main(int argc,char *argv[])
 	  returnValue = rt_task_create(&read_input_queues_task,
 								  "read_input_queues_task",
 								  0,
-								  12,
+								  9,
 								  T_JOINABLE);
 	  }
 
@@ -236,6 +288,14 @@ int main(int argc,char *argv[])
 								    Q_UNLIMITED,
 								    Q_SHARED);
 	  }
+	  if (returnValue == RETURN_OK)
+	  {
+	  returnValue = rt_queue_create(&write_to_panel_queue,
+									write_to_panel_queue_Name,
+									PANEL_OUTPUT_BUFFER_SIZE,
+									Q_UNLIMITED,
+									Q_SHARED);
+	  }
 
 
 
@@ -255,6 +315,10 @@ int main(int argc,char *argv[])
 	  }
 	  if (returnValue == RETURN_OK)
 	  {
+		 returnValue = panel_comm_init();
+	  }
+	  if (returnValue == RETURN_OK)
+	  {
 	  returnValue = rt_task_start(&read_input_queues_task,
 	  							  &read_input_queues_task_func,
 	  							  NULL);
@@ -264,10 +328,6 @@ int main(int argc,char *argv[])
 	  {
 
 	  }
-
-
-
-
 
 	while(1)
 	  {

@@ -34,7 +34,7 @@ then
    echo $PWD
   sudo cp *.h $INSTALLMAININCLUDEPATH
 
-  cd ../xplane_comm/scripts
+  cd ../panel_comm/scripts
 echo "---------------End-------------------"
  else
   echo "NOK"
@@ -47,7 +47,7 @@ fi
 
 
 echo "#------------------------------------#"
-echo "# xplane_comm SOFTWARE BUILD PROCESS #"
+echo "# panel_comm SOFTWARE BUILD PROCESS #"
 echo "#------------------------------------#"
 
 
@@ -64,13 +64,13 @@ echo "------------------"
 
 cd ../../
 
-compiledependence "xplane_comm"
+compiledependence "panel_comm"
 
  
 
 echo "5. end"
 echo "-----------------------------------"
-sudo ln -s -f /usr/local/lib/pfc/libxplane_commd.so /usr/lib/libxplane_commd.so
+sudo ln -s -f /usr/local/lib/pfc/libpanel_commd.so /usr/lib/libpanel_commd.so
 sudo ldconfig
 if test "$returnValue" = "0"
 then

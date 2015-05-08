@@ -4,12 +4,12 @@
 	
 	#########################################################################################################
 # File Name   : Makefile
-# Copyright   : Ixion
+# Copyright   : 
 # Version     : 1.0
 # File type   : Makefile for GNU Make 3.81
 # Compiler    : g++ 
 # Linker      : GNU ld (GNU Binutils for Debian) 2.18.0.20080103
-# Project     : Indoor Robot
+# Project     : 
 # Description : to build a project
 # Rules		  : compileIdl, cleanAll, all, clean
 #					 On compilation specify operating system means: OS=LINUX or OS=XENOMAI
@@ -25,7 +25,7 @@
 #
 LENGUAJE		= GCC
 SRC_DIR 		= src
-SRC      	= xplane_comm.c
+SRC      	= panel_comm.c
 
 #
 # Find out the compilation mode.
@@ -59,8 +59,8 @@ endif
 #
 # These source files contains the business logical  
 #
-OUTPUT_EXEC	= $(BINARY_FOLDER)/xplane_comm_test
-NAME_LIB		= xplane_comm$(DEBUG_NAME)
+OUTPUT_EXEC	= $(BINARY_FOLDER)/panel_comm_test
+NAME_LIB		= panel_comm$(DEBUG_NAME)
 OUTPUT_LIB	= lib/lib$(NAME_LIB).so
 
 #

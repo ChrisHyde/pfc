@@ -5,6 +5,7 @@
 #include "apc220_comm.h"
 #include "xplane_comm.h"
 #include "controller_comm.h"
+#include "panel_comm.h"
 
 
 
@@ -21,7 +22,11 @@
 
 #define APC220_OUTPUT_BUFFER_SIZE			 50
 #define XPLANE_OUTPUT_BUFFER_SIZE			 24
+#define PANEL_OUTPUT_BUFFER_SIZE			 24
 #define CONTROLLER_OUTPUT_BUFFER_SIZE		 24
+
+#define XPLANE_BASIC_INDEXES_USED      		 3
+#define UDP_DATA_GROUPS						 8
 
 
 #define XPLANE_SHM "/xplane_shared_memory"
