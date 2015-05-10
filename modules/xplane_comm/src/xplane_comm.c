@@ -20,7 +20,7 @@ int udpReadSocket	= 0;
 uint8_t xplaneByteInputValues[XPLANE_BASIC_INDEXES_USED][UDP_DATA_TOTAL_SIZE+1];
 ST_Xplane_inputDecimalVectors  xplaneInputDecimalValues;
 
-ST_Xplane_outputDecimalVectors *xplaneOutputDecimalValues = NULL;
+
 
 /*******************************************************************************
  * Type         : ...
@@ -159,7 +159,6 @@ if(returnValue==RETURN_OK)
   while(1)
   {
 	  fflush(stdout);
-	  fflush(stderr);
 	  xplaneInputfloatValues[0] = '\0';
 	  memset(buffer,'\0', BUFFERSIZE);
 	  memset(UdpHeader,'\0', UDP_HEADER_SIZE);
@@ -180,11 +179,11 @@ if(returnValue==RETURN_OK)
 
     if(returnValue==RETURN_OK)
     {
-    for(headerPosCounter=0;headerPosCounter<UDP_HEADER_SIZE;headerPosCounter++)
-	{
-	  UdpHeader[headerPosCounter]=buffer[headerPosCounter];
+		for(headerPosCounter=0;headerPosCounter<UDP_HEADER_SIZE;headerPosCounter++)
+		{
+		  UdpHeader[headerPosCounter]=buffer[headerPosCounter];
 
-	}
+		}
 	  UdpHeader[UDP_HEADER_SIZE]='\0';
 	  currentDataPos=UDP_INDEX_START;
 
@@ -216,6 +215,10 @@ if(returnValue==RETURN_OK)
 					}
 				}
 				fprintf(stderr,"\n\n");*/
+	    if (returnValue == RETURN_ERROR)
+	    {
+	    	fprintf(stderr,"BYTE_TO_FLOAT_ERROR\n");
+	    }
 
 	    pitch	= xplaneInputDecimalValues.xplaneInputDecimalValues[0][1];
 	    roll	= xplaneInputDecimalValues.xplaneInputDecimalValues[0][2];
@@ -250,17 +253,26 @@ fprintf(stderr,"m4 %f\n",m4);*/
 										 sizeof(xplaneInputfloatValues),
 										 Q_URGENT);
 		   }
+           if(returnValue == RETURN_ERROR)
+           {
+        	   fprintf(stderr,"XPLANE_READ_TASK_FUNC 0 \n");
+           }
       }
 	  else
 	  {
        //Do nothing
+		  fprintf(stderr,"XPLANE_READ_TASK_FUNC 1 \n");
 	  }
 	}
+    else
+    {
+    	fprintf(stderr,"XPLANE_READ_TASK_FUNC 2 \n");
+    }
 
 
     tcflush(udpReadSocket,TCIOFLUSH);
-    fflush(stdout);
-    fflush(stderr);
+    //fflush(stdout);
+    //fflush(stderr);
     rt_task_wait_period(NULL);
   }
  }
@@ -281,21 +293,22 @@ fprintf(stderr,"m4 %f\n",m4);*/
  ******************************************************************************/
 void xplane_write_task_func(void *arg)
 {
-	char buffer[BUFFERSIZE];
-	int returnValue;
-	int bytesRead;
-	int connectionAttempts;
-	struct sockaddr_in xplaneWriteAddress;
-	socklen_t addr_size;
+	char 								buffer[BUFFERSIZE];
+	int 								returnValue;
+	int 								bytesRead;
+	struct sockaddr_in 					xplaneWriteAddress;
+	socklen_t 							addr_size;
+	int 								bytesSent;
+	union UN_Byte_float_transformation 	data;
+	ST_Xplane_outputDecimalVectors 		xplaneOutputDecimalValues;
 	//int counter=0;
 
 
 	    /*init values*/
-	    connectionAttempts 		  = 0;
 	    bytesRead		   		  = 0;
+	    bytesSent				  = 0;
 	    returnValue        		  = RETURN_ERROR;
 	    buffer[0]		   		  = '\0';
-	    //xplaneOutputDecimalValues = NULL;
 
 	    /*Create UDP socket*/
 	      udpWriteSocket = socket(PF_INET, SOCK_DGRAM, 0);
@@ -315,7 +328,7 @@ void xplane_write_task_func(void *arg)
 	     else
 	     {
 	    	 sleep(2);
-	    	 fprintf(stderr,"Xplane Socket: ERROR: %d, %d \r",connectionAttempts,
+	    	 fprintf(stderr,"Xplane Socket: ERROR: %d \n",
 	    			 returnValue);
 	    	 returnValue=RETURN_ERROR;
 	     }
@@ -336,38 +349,36 @@ void xplane_write_task_func(void *arg)
 		  }
 		  if (returnValue == RETURN_OK)
 		  {
-			  xplaneOutputDecimalValues = malloc(sizeof(*xplaneOutputDecimalValues));
+			  //xplaneOutputDecimalValues = malloc(sizeof(*xplaneOutputDecimalValues));
 
 		  			bytesRead=rt_queue_read(&write_to_xplane_queue,
-		  									xplaneOutputDecimalValues,
-											sizeof(*xplaneOutputDecimalValues),
+		  									&xplaneOutputDecimalValues,
+											sizeof(xplaneOutputDecimalValues),
 											TM_NONBLOCK);
 		  }
-
-
-
-		 /*fprintf(stderr,"Data recieved:%f<--->%f<---->%f<---->%f<---->%f<---->%f<---->%f<---->%f<---->%f<---->%f<---->%d<---->%d\n",
-		  											xplaneOutputDecimalValues->AcX,
-		  											xplaneOutputDecimalValues->AcY,
-		  											xplaneOutputDecimalValues->AcZ,
-		  											xplaneOutputDecimalValues->Pitch,
-		  											xplaneOutputDecimalValues->Roll,
-		  											xplaneOutputDecimalValues->Yaw,
-		  											xplaneOutputDecimalValues->M1,
-		  											xplaneOutputDecimalValues->M2,
-		  											xplaneOutputDecimalValues->M3,
-		  											xplaneOutputDecimalValues->M4,
+		/* fprintf(stderr,"Data recieved:%f<--->%f<---->%f<---->%f<---->%f<---->%f<---->%f<---->%f<---->%f<---->%f<---->%d<---->%d\n",
+		  											xplaneOutputDecimalValues.AcX,
+		  											xplaneOutputDecimalValues.AcY,
+		  											xplaneOutputDecimalValues.AcZ,
+		  											xplaneOutputDecimalValues.Pitch,
+		  											xplaneOutputDecimalValues.Roll,
+		  											xplaneOutputDecimalValues.Yaw,
+		  											xplaneOutputDecimalValues.M1,
+		  											xplaneOutputDecimalValues.M2,
+		  											xplaneOutputDecimalValues.M3,
+		  											xplaneOutputDecimalValues.M4,
 		  											bytesRead,
-		  											sizeof(*xplaneOutputDecimalValues));*/
+		  											sizeof(xplaneOutputDecimalValues));*/
 		  if (bytesRead>0)
 		  {
-			  /*fprintf(stderr,"D: %f, %f, %f, %f\n",xplaneOutputDecimalValues->M1,
-			  					xplaneOutputDecimalValues->M2,
-			  					xplaneOutputDecimalValues->M3,
-			  					xplaneOutputDecimalValues->M4);*/
-
-		             union UN_Byte_float_transformation data;
-
+			  returnValue=RETURN_OK;
+		  }
+		  if(returnValue==RETURN_OK)
+		  {
+			  /*fprintf(stderr,"D: %f, %f, %f, %f\n",xplaneOutputDecimalValues.M1,
+			  					xplaneOutputDecimalValues.M2,
+			  					xplaneOutputDecimalValues.M3,
+			  					xplaneOutputDecimalValues.M4);*/
 
 		             //BUILD UDP MESSAGE
 		             //HEADER
@@ -381,17 +392,17 @@ void xplane_write_task_func(void *arg)
 		             buffer[UDP_INDEX_START+1]=0;
 		             buffer[UDP_INDEX_START+2]=0;
 		             buffer[UDP_INDEX_START+3]=0;
-		             data.floatValue = xplaneOutputDecimalValues->Pitch;
+		             data.floatValue = xplaneOutputDecimalValues.Pitch;
 		             buffer[UDP_DATA_START]=data.byteValue[0];
 		             buffer[UDP_DATA_START+1]=data.byteValue[1];
 		             buffer[UDP_DATA_START+2]=data.byteValue[2];
 		             buffer[UDP_DATA_START+3]=data.byteValue[3];
-		             data.floatValue = xplaneOutputDecimalValues->Roll;
+		             data.floatValue = xplaneOutputDecimalValues.Roll;
 		             buffer[UDP_DATA_START+UDP_DATA_SIZE]=data.byteValue[0];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+1]=data.byteValue[1];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+2]=data.byteValue[2];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+3]=data.byteValue[3];
-					 data.floatValue = xplaneOutputDecimalValues->Yaw;
+					 data.floatValue = xplaneOutputDecimalValues.Yaw;
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE]=data.byteValue[0];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+1]=data.byteValue[1];
 					 buffer[UDP_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+2]=data.byteValue[2];
@@ -427,22 +438,22 @@ void xplane_write_task_func(void *arg)
 					 buffer[UDP_SECOND_INDEX_START+1]=0;
 					 buffer[UDP_SECOND_INDEX_START+2]=0;
 					 buffer[UDP_SECOND_INDEX_START+3]=0;
-					 data.floatValue = xplaneOutputDecimalValues->M1;
+					 data.floatValue = xplaneOutputDecimalValues.M1;
 					 buffer[UDP_SECOND_DATA_START]=data.byteValue[0];
 					 buffer[UDP_SECOND_DATA_START+1]=data.byteValue[1];
 					 buffer[UDP_SECOND_DATA_START+2]=data.byteValue[2];
 					 buffer[UDP_SECOND_DATA_START+3]=data.byteValue[3];
-					 data.floatValue = xplaneOutputDecimalValues->M2;
+					 data.floatValue = xplaneOutputDecimalValues.M2;
 					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE]=data.byteValue[0];
 					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+1]=data.byteValue[1];
 					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+2]=data.byteValue[2];
 					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+3]=data.byteValue[3];
-					 data.floatValue = xplaneOutputDecimalValues->M3;
+					 data.floatValue = xplaneOutputDecimalValues.M3;
 					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE]=data.byteValue[0];
 					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+1]=data.byteValue[1];
 					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+2]=data.byteValue[2];
 					 buffer[UDP_SECOND_DATA_START+UDP_DATA_SIZE+UDP_DATA_SIZE+3]=data.byteValue[3];
-					 data.floatValue = xplaneOutputDecimalValues->M4;
+					 data.floatValue = xplaneOutputDecimalValues.M4;
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*3)]=data.byteValue[0];
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*3)+1]=data.byteValue[1];
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*3)+2]=data.byteValue[2];
@@ -468,27 +479,30 @@ void xplane_write_task_func(void *arg)
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+2]=data.byteValue[2];
 					 buffer[UDP_SECOND_DATA_START+(UDP_DATA_SIZE*7)+3]=data.byteValue[3];
 
-					//counter++;
-					//fprintf(stderr,"\r%d",counter);
-
-
-					sendto(udpWriteSocket,buffer,BUFFERSIZE,0,(struct sockaddr *)&xplaneWriteAddress,addr_size);
-					//data.byteValue=NULL;
-
+					bytesSent=sendto(udpWriteSocket,buffer,BUFFERSIZE,0,(struct sockaddr *)&xplaneWriteAddress,addr_size);
+					if(bytesSent <=0)
+					{
+						fprintf(stderr,"XPLANE_WRITE_TASK_FUNC 0\n");
+						returnValue=RETURN_ERROR;
+					}
 		 }
 		 else
          {
-           //fprintf(stderr,"transfer error \r");
+             fprintf(stderr,"XPLANE_WRITE_TASK_FUNC 1\n");
 			 returnValue=RETURN_OK; //start again
          }
 		  tcflush(udpWriteSocket,TCIOFLUSH);
-		  fflush(stdout);
-		  fflush(stderr);
+		  //fflush(stdout);
+		  //fflush(stderr);
 
-		  memset(&buffer[0], 0, sizeof(buffer));
-		  free(xplaneOutputDecimalValues);
+		  //memset(&buffer[0], 0, sizeof(buffer));
+		  //free(xplaneOutputDecimalValues);
 	      rt_task_wait_period(NULL);
       }
+	}
+	else
+	{
+		fprintf(stderr,"XPLANE_WRITE_TASK_FUNC 2\n");
 	}
 }
 /* (END) XPLANE_WRITE_TASK_FUNC*/

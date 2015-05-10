@@ -76,7 +76,8 @@ char*   write_to_xplane_queue_Name  	= "write_from_xplane_queue";
 char*   read_from_xplane_queue_Name  	= "read_from_xplane_queue";
 char*   controller_inputQueueName  		= "controller_inputQueue";
 char*   autopilotQueueName  			= "autopilotQueue";
-char*   write_to_panel_queue_Name  		= "write_from_panel_queue";
+char*   write_to_panel_queue_Name  		= "write_to_panel_queue";
+char*   read_from_panel_queue_Name  	= "read_from_panel_queue";
 
 
 RT_QUEUE write_to_xplane_queue;  /*LIFO style queue*/
@@ -85,6 +86,7 @@ RT_QUEUE controller_inputQueue;  /*LIFO style queue*/
 RT_QUEUE acp220_inputQueue;		 /*LIFO style queue --> read from apc220*/
 RT_QUEUE acp220_outputQueue;     /*LIFO style queue--> write to apc220*/
 RT_QUEUE write_to_panel_queue;
+RT_QUEUE read_from_panel_queue;
 
 
 

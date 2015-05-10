@@ -15,9 +15,86 @@
 /*global variables*/
 
 
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
 
- /*n =
-			  	     if (n < 0) fprintf(stderr,"ERROR writing to socket");*/
+
+void climb_task_func(void *arg)
+{
+	float xplaneInputfloatValues[8];
+	float panelOutputfloatValues[4];
+    int xplaneBytesRead;
+    int returnValue;
+
+
+    /*init values*/
+    xplaneBytesRead = 0;
+    returnValue=RETURN_OK;
+
+
+	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
+  while(1)
+  {
+
+
+	  returnValue= rt_queue_bind (&read_from_xplane_queue,
+			  	  	  	  	  	  read_from_xplane_queue_Name,
+								  TM_NONBLOCK);
+
+	 if (returnValue==RETURN_OK)
+	 {
+		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+											 &xplaneInputfloatValues,
+											 sizeof(xplaneInputfloatValues),
+											 TM_NONBLOCK);
+		 if (xplaneBytesRead<=0)
+		 {
+            fprintf(stderr,"CLIMB_TASK_FUNC_ERROR 1\n");
+		 }
+		 else
+		 {
+
+ /* fprintf(stderr,"%f,%f,%f,%f,%f,%f,%f,%f\n\n",xplaneInputfloatValues[0],
+										  xplaneInputfloatValues[1],
+										  xplaneInputfloatValues[2],
+										  xplaneInputfloatValues[3],
+										  xplaneInputfloatValues[4],
+										  xplaneInputfloatValues[5],
+										  xplaneInputfloatValues[6],
+										  xplaneInputfloatValues[7]);*/
+             if(xplaneInputfloatValues[3]> 3 )
+             {
+
+            	    panelOutputfloatValues[0]=12 ;
+					panelOutputfloatValues[1]=12 ;
+					panelOutputfloatValues[2]=12 ;
+					panelOutputfloatValues[3]=12 ;
+             }
+		 }
+
+	 }
+     }
+	 returnValue = rt_queue_write(&read_from_panel_queue,
+								 &panelOutputfloatValues,
+								 sizeof(panelOutputfloatValues),
+								 Q_URGENT);
+	 if(returnValue == RETURN_ERROR)
+	 {
+		 fprintf(stderr,"CLIMB_TASK_FUNC_ERROR 2\n");
+	 }
+	 rt_task_wait_period(NULL);
+
+}/*END_CLIMB_TASK_FUNC*/
+
 
 /*******************************************************************************
  * Type         : ...
@@ -32,165 +109,302 @@
  ******************************************************************************/
 
 
-void send_data_to_panel_task_func(void *arg)
+void hover_task_func(void *arg)
 {
-
-    int    		returnValue;
-	int    		tcpSocketFD;
-	int    		tcpAcceptSocketFD;
-	int 		xplaneBytesRead;
-	int    		connectionAttempts;
-	struct 		sockaddr_in serv_addr;
-	struct 		sockaddr_in cli_addr;
-	socklen_t 	clilen;
-	char   		dataRecievedBuffer[256];
-	int 		bytesRead;
-	float       xplaneInputfloatValues[8];
-	char	    bufferM1[6];
-	char	    bufferM2[6];
-	char	    bufferM3[6];
-	char	    bufferM4[6];
-	char	    bufferPitch[6];
-	char	    bufferRoll[6];
-	char	    bufferYaw[6];
-	char	    bufferAlt[6];
-	char	    bufferSendToPanel[256];
+	float xplaneInputfloatValues[8];
+	float panelOutputfloatValues[4];
+    int xplaneBytesRead;
+    float altitude;
+    int returnValue;
 
 
-	fprintf(stderr,"start send data task...\n");
-	  /*init values*/
-	  returnValue				= RETURN_OK;
-	  connectionAttempts 		= 0;
-	  xplaneBytesRead			= 0;
-	  dataRecievedBuffer[0]     = '\0';
-	  bytesRead					= 0;
-	  xplaneInputfloatValues[0] = '\0';
-	  bufferM1[0] 				= '\0';
-	  bufferM2[0]				= '\0';
-	  bufferM3[0]				= '\0';
-	  bufferM4[0]				= '\0';
-	  bufferPitch[0]			= '\0';
-	  bufferRoll[0]				= '\0';
-      bufferYaw[0]				= '\0';
-	  bufferAlt[0]				= '\0';
-	  bufferSendToPanel[0]		= '\0';
+    /*init values*/
+    xplaneBytesRead = 0;
+    altitude = 0.0;
+    returnValue=RETURN_OK;
 
-	  tcpSocketFD = socket(AF_INET, SOCK_STREAM, 0);
-	     if (tcpSocketFD >= 0)
-	     {
-	    	 bzero((char *) &serv_addr, sizeof(serv_addr));
-			 serv_addr.sin_family 		= AF_INET;
-			 serv_addr.sin_addr.s_addr  = INADDR_ANY;
-			 serv_addr.sin_port 		= htons (TCP_DATA_PORT);
 
-			 returnValue = bind(tcpSocketFD, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-			 fprintf(stderr,"Data transfer To panel Socket: OK.\n");
-	     }
-	     else
-	     {
-	    	 sleep(2);
-			 fprintf(stderr,"Data transfer To panel: ERROR %d, %d \r",
-					 connectionAttempts,returnValue);
-			 returnValue = RETURN_ERROR;
-	     }
+    returnValue= rt_queue_bind (&read_from_xplane_queue,
+							  read_from_xplane_queue_Name,
+							  TM_NONBLOCK);
 
-	     rt_task_set_periodic(NULL, TM_NOW, 1000*1000*10);
+    xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+								 &xplaneInputfloatValues,
+								 sizeof(xplaneInputfloatValues),
+								 TM_NONBLOCK);
+    if(xplaneBytesRead>=0)
+    {
+    altitude = xplaneInputfloatValues[3];
+    }
+    else
+    {
+    	returnValue = RETURN_ERROR;
+    }
 
-		  while(1)
-		  {
+    rt_queue_unbind	(&read_from_xplane_queue);
 
-			  bufferM1[0] 				= '\0';
-			  bufferM2[0]				= '\0';
-			  bufferM3[0]				= '\0';
-			  bufferM4[0]				= '\0';
-			  bufferPitch[0]			= '\0';
-			  bufferRoll[0]				= '\0';
-			  bufferYaw[0]				= '\0';
-			  bufferAlt[0]				= '\0';
-			  bufferSendToPanel[0]		= '\0';
 
-			  if(returnValue == RETURN_OK )
-			  {
-				  listen(tcpSocketFD,5);
-				  clilen = sizeof(cli_addr);
+	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
+  while(1)
+  {
 
-				  tcpAcceptSocketFD = accept(tcpSocketFD,(struct sockaddr *) &cli_addr,&clilen);
-				  if (tcpSocketFD >= 0)
-				  {
-					  bzero(dataRecievedBuffer,256);
-				  }
 
+	  returnValue= rt_queue_bind (&read_from_xplane_queue,
+			  	  	  	  	  	  read_from_xplane_queue_Name,
+								  TM_NONBLOCK);
+
+	 if (returnValue==RETURN_OK)
+	 {
+		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+											 &xplaneInputfloatValues,
+											 sizeof(xplaneInputfloatValues),
+											 TM_NONBLOCK);
+		 if (xplaneBytesRead<=0)
+		 {
+            fprintf(stderr,"HOVER_TASK_FUNC_ERROR 1 \n");
+		 }
+		 else
+		 {
+
+ /* fprintf(stderr,"%f,%f,%f,%f,%f,%f,%f,%f\n\n",xplaneInputfloatValues[0],
+										  xplaneInputfloatValues[1],
+										  xplaneInputfloatValues[2],
+										  xplaneInputfloatValues[3],
+										  xplaneInputfloatValues[4],
+										  xplaneInputfloatValues[5],
+										  xplaneInputfloatValues[6],
+										  xplaneInputfloatValues[7]);*/
+             if(xplaneInputfloatValues[3]< altitude-0.5 )
+             {//15 feet takeoff level
+
+            	    panelOutputfloatValues[0]=9 ;
+					panelOutputfloatValues[1]=9 ;
+					panelOutputfloatValues[2]=9 ;
+					panelOutputfloatValues[3]=9 ;
+             }
+             if(xplaneInputfloatValues[3]> altitude+0.5)
+			  {//15 feet takeoff level
+
+					panelOutputfloatValues[0]=8.5 ;
+					panelOutputfloatValues[1]=8.5 ;
+					panelOutputfloatValues[2]=8.5 ;
+					panelOutputfloatValues[3]=8.5 ;
+			  }
+		 }
+
+
+     }
+	 returnValue = rt_queue_write(&read_from_panel_queue,
+								 &panelOutputfloatValues,
+								 sizeof(panelOutputfloatValues),
+								 Q_URGENT);
+	 if(returnValue == RETURN_ERROR)
+	 {
+		 fprintf(stderr,"HOVER_TASK_FUNC_ERROR 2\n");
+	 }
+	 rt_task_wait_period(NULL);
+  }
+}/*END_HOVER_TASK_FUNC*/
+
+
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
+
+
+void land_task_func(void *arg)
+{
+	float xplaneInputfloatValues[8];
+	float panelOutputfloatValues[4];
+    int xplaneBytesRead;
+    int returnValue;
+
+
+    /*init values*/
+    xplaneBytesRead = 0;
+    returnValue=RETURN_OK;
+
+	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
+  while(1)
+  {
+
+
+	  returnValue= rt_queue_bind (&read_from_xplane_queue,
+			  	  	  	  	  	  read_from_xplane_queue_Name,
+								  TM_NONBLOCK);
+
+	 if (returnValue==RETURN_OK)
+	 {
+		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+											 &xplaneInputfloatValues,
+											 sizeof(xplaneInputfloatValues),
+											 TM_NONBLOCK);
+		 if (xplaneBytesRead<=0)
+		 {
+			 fprintf(stderr,"LAND_TASK_FUNC_ERROR 1\n");
+		 }
+		 else
+		 {
+             if(xplaneInputfloatValues[3]>=15 )
+             {//15 feet takeoff level
+
+            	    panelOutputfloatValues[0]=5 ;
+					panelOutputfloatValues[1]=5 ;
+					panelOutputfloatValues[2]=5 ;
+					panelOutputfloatValues[3]=5 ;
+             }
+             if(xplaneInputfloatValues[3]< 15 && xplaneInputfloatValues[3]>5 )
+			  {//15 feet takeoff level
+
+					panelOutputfloatValues[0]=7 ;
+					panelOutputfloatValues[1]=7 ;
+					panelOutputfloatValues[2]=7 ;
+					panelOutputfloatValues[3]=7 ;
+			  }
+             if(xplaneInputfloatValues[3]<=5 && xplaneInputfloatValues[3]>=3)
+			  {//15 feet takeoff level
+
+					panelOutputfloatValues[0]=8 ;
+					panelOutputfloatValues[1]=8 ;
+					panelOutputfloatValues[2]=8 ;
+					panelOutputfloatValues[3]=8 ;
 			  }
 
-			      bytesRead = read(tcpAcceptSocketFD,dataRecievedBuffer,255);
-				 if (bytesRead >= 0)
-				 {
-					 fprintf(stderr,"reading bytes %s\n",dataRecievedBuffer);
-					 if(strcmp(dataRecievedBuffer,TCP_COMM_DATA_RADIO) )
-					 {
+             if(xplaneInputfloatValues[3]<=3 )
+			  {//15 feet takeoff level
 
-					 }
-					 if(strcmp(dataRecievedBuffer,TCP_COMM_XDATA_TRANSFER) )
-					 {
-						 fprintf(stderr,"bind to xplane queue\n");
-						 returnValue= rt_queue_bind (&write_to_panel_queue,
-													 write_to_panel_queue_Name,
-													   TM_NONBLOCK);
-						 if(returnValue==RETURN_OK)
-						 {
-							 fprintf(stderr,"read from xplane queue\n");
-							 xplaneBytesRead=rt_queue_read(&write_to_panel_queue,
-														  &xplaneInputfloatValues,
-														  sizeof(xplaneInputfloatValues),
-														  TM_NONBLOCK);
-						 }
-						 if(xplaneBytesRead>0)
-						 {
+					panelOutputfloatValues[0]=6 ;
+					panelOutputfloatValues[1]=6 ;
+					panelOutputfloatValues[2]=6 ;
+					panelOutputfloatValues[3]=6 ;
+			  }
+             if(xplaneInputfloatValues[3]<=1 )
+			  {//15 feet takeoff level
 
-							 sprintf(bufferPitch, "%f",xplaneInputfloatValues[0] );
-							 sprintf(bufferRoll, "%f",xplaneInputfloatValues[1] );
-							 sprintf(bufferYaw, "%f",xplaneInputfloatValues[2] );
-							 sprintf(bufferAlt, "%f",xplaneInputfloatValues[3] );
-							 sprintf(bufferM1, "%f",xplaneInputfloatValues[4] );
-							 sprintf(bufferM2, "%f",xplaneInputfloatValues[5] );
-							 sprintf(bufferM3, "%f",xplaneInputfloatValues[6] );
-							 sprintf(bufferM4, "%f",xplaneInputfloatValues[7] );
-							/* fprintf(stderr,"Pitch: %s\n",bufferPitch); fprintf(stderr,"Roll: %s\n",bufferRoll);
-							 fprintf(stderr,"Yaw: %s\n",bufferYaw);fprintf(stderr,"Alt: %s\n",bufferAlt);
-							 fprintf(stderr,"M1: %s\n",bufferM1);fprintf(stderr,"M2: %s\n",bufferM2);
-							 fprintf(stderr,"M3: %s\n",bufferM3);fprintf(stderr,"M4: %s\n",bufferM4);*/
-							 strcpy(bufferSendToPanel,bufferPitch);
-							 strcat(bufferSendToPanel,bufferRoll);
-							 strcat(bufferSendToPanel,bufferYaw);
-							 strcat(bufferSendToPanel,bufferAlt);
-							 strcat(bufferSendToPanel,bufferM1);
-							 strcat(bufferSendToPanel,bufferM2);
-							 strcat(bufferSendToPanel,bufferM3);
-							 strcat(bufferSendToPanel,bufferM4);
+					panelOutputfloatValues[0]=0 ;
+					panelOutputfloatValues[1]=0 ;
+					panelOutputfloatValues[2]=0 ;
+					panelOutputfloatValues[3]=0 ;
+			  }
 
 
-						 w//rite(tcpAcceptSocketFD,bufferSendToPanel,sizeof(bufferSendToPanel));
-
-						 }
-
-					 }
-					 else
-					 {
-						 fprintf(stderr,"de que cono vas!...");
-					 }
-				 }
+		 }
 
 
-			  rt_task_wait_period(NULL);
-		  }
+     }
+	 else
+	 {
+		 fprintf(stderr,"HOVER_TASK_FUNC_ERROR 2\n");
+	 }
+	 returnValue = rt_queue_write(&read_from_panel_queue,
+								 &panelOutputfloatValues,
+								 sizeof(panelOutputfloatValues),
+								 Q_URGENT);
+	 rt_task_wait_period(NULL);
+  }
+} /*END_LAND_TASK_FUNC*/
 
 
-		     close(tcpAcceptSocketFD);
-		     close(tcpSocketFD);
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
 
 
+void takeoff_task_func(void *arg)
+{
+	float xplaneInputfloatValues[8];
+	float panelOutputfloatValues[4];
+    int xplaneBytesRead;
+    int returnValue;
 
-}/*(END) SEND_DATA_TO_PANEL_TASK_FUNC*/
+
+    /*init values*/
+    xplaneBytesRead = 0;
+    returnValue=RETURN_OK;
+
+	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
+  while(1)
+  {
+
+
+	  returnValue= rt_queue_bind (&read_from_xplane_queue,
+			  	  	  	  	  	  read_from_xplane_queue_Name,
+								  TM_NONBLOCK);
+
+	 if (returnValue==RETURN_OK)
+	 {
+		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+											 &xplaneInputfloatValues,
+											 sizeof(xplaneInputfloatValues),
+											 TM_NONBLOCK);
+		 if (xplaneBytesRead<=0)
+		 {
+			 fprintf(stderr,"TAKEOFF_TASK_FUNC_ERROR 1\n");
+		 }
+		 else
+		 {
+ /* fprintf(stderr,"%f,%f,%f,%f,%f,%f,%f,%f\n\n",xplaneInputfloatValues[0],
+										  xplaneInputfloatValues[1],
+										  xplaneInputfloatValues[2],
+										  xplaneInputfloatValues[3],
+										  xplaneInputfloatValues[4],
+										  xplaneInputfloatValues[5],
+										  xplaneInputfloatValues[6],
+										  xplaneInputfloatValues[7]);*/
+             if(xplaneInputfloatValues[3]<=1 )
+             {
+
+            	    panelOutputfloatValues[0]=10 ;
+					panelOutputfloatValues[1]=10 ;
+					panelOutputfloatValues[2]=10 ;
+					panelOutputfloatValues[3]=10 ;
+             }
+             if(xplaneInputfloatValues[3]< 15 && xplaneInputfloatValues[3]>2 )
+			  {//15 feet takeoff level
+
+					panelOutputfloatValues[0]=9 ;
+					panelOutputfloatValues[1]=9 ;
+					panelOutputfloatValues[2]=9 ;
+					panelOutputfloatValues[3]=9 ;
+			  }
+             if(xplaneInputfloatValues[3]>= 15 )
+			  {
+
+					panelOutputfloatValues[0]=8 ;
+					panelOutputfloatValues[1]=8 ;
+					panelOutputfloatValues[2]=8 ;
+					panelOutputfloatValues[3]=8 ;
+			  }
+		 }
+     }
+	 else
+	 {
+		 fprintf(stderr,"TAKEOFF_TASK_FUNC_ERROR 2\n");
+	 }
+	 returnValue = rt_queue_write(&read_from_panel_queue,
+								 &panelOutputfloatValues,
+								 sizeof(panelOutputfloatValues),
+								 Q_URGENT);
+	 rt_task_wait_period(NULL);
+  }
+}/*END_TAKEOFF_TASK_FUNC*/
+
 
 /*******************************************************************************
  * Type         : ...
@@ -217,7 +431,9 @@ void panel_tcp_test_incoming_task_func(void *arg)
 	socklen_t 	clilen;
 	char   		dataRecievedBuffer[256];
 	int 		bytesRead;
-	bool 		isSendDataToPanelStarted;
+	int 	    taskExist;
+	int			tcpInput;
+	float 		panelOutputfloatValues[4];
 
 
 
@@ -226,7 +442,7 @@ void panel_tcp_test_incoming_task_func(void *arg)
 	  connectionAttempts 		= 0;
 	  dataRecievedBuffer[0]     = '\0';
 	  bytesRead					= 0;
-	  isSendDataToPanelStarted	= FALSE;
+	  taskExist 				= 1;
 
 	  tcpSocketFD = socket(AF_INET, SOCK_STREAM, 0);
 	     if (tcpSocketFD >= 0)
@@ -235,7 +451,6 @@ void panel_tcp_test_incoming_task_func(void *arg)
 			 serv_addr.sin_family 		= AF_INET;
 			 serv_addr.sin_addr.s_addr  = INADDR_ANY;
 			 serv_addr.sin_port 		= htons (TCP_PORT);
-
 			 returnValue = bind(tcpSocketFD, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
 			 fprintf(stderr,"Panel Socket: OK.\n");
 
@@ -248,7 +463,7 @@ void panel_tcp_test_incoming_task_func(void *arg)
 			 returnValue = RETURN_ERROR;
 	     }
 
-	     rt_task_set_periodic(NULL, TM_NOW, 5000*1000*100);
+	     rt_task_set_periodic(NULL, TM_NOW, 1000*1000*100);
 		  while(1)
 		  {
 			  if(returnValue == RETURN_OK )
@@ -261,32 +476,146 @@ void panel_tcp_test_incoming_task_func(void *arg)
 				  {
 					  bzero(dataRecievedBuffer,256);
 				  }
-
 			  }
-
 			      bytesRead = read(tcpAcceptSocketFD,dataRecievedBuffer,255);
-				 if (bytesRead >= 0)
-				 {
-					 if(strcmp(dataRecievedBuffer,TCP_COMM_ENABLE) && !isSendDataToPanelStarted)
-					 {
-						 close(tcpAcceptSocketFD);
-						 close(tcpSocketFD);
-						 isSendDataToPanelStarted = TRUE;
-						 returnValue = rt_task_start(&send_data_to_panel_task,
-						 	   					     &send_data_to_panel_task_func,
-						 	   						  NULL);
 
+				 if (bytesRead >= 0)
+
+				     write(tcpAcceptSocketFD,"I got your message",18);
+				     tcpInput=atoi(dataRecievedBuffer);
+				 {
+					 //TAKEOFF//////////////////////////////////////////////////////////////////////
+					 if(tcpInput==TCP_COMM_XTAKEOFF_TRANSFER)
+					 {
+						 taskExist= rt_task_inquire(&takeoff_task,NULL);
+						 if(taskExist!=0)
+						 {
+							 //delete al other tasks
+							 rt_task_delete(&land_task);
+							 rt_task_delete(&hover_task);
+							 rt_task_delete(&climb_task);
+							 rt_task_delete(&takeoff_task);
+
+						  returnValue = rt_task_create(&takeoff_task,
+														"takeoff_task",
+														0,
+														3,
+														T_JOINABLE);
+                        returnValue = rt_task_start(&takeoff_task,
+                       	   							&takeoff_task_func,
+                       	   							NULL);
+						 }
+						 else
+						 {
+							 //task already running
+						 }
 					 }
+					 //STOP//////////////////////////////////////////////////////////////////////
+					 if(tcpInput==TCP_COMM_XSTOP_TRANSFER)
+					 {
+
+						 rt_task_delete(&takeoff_task);
+						 panelOutputfloatValues[0]=0 ;
+						 panelOutputfloatValues[1]=0 ;
+						 panelOutputfloatValues[2]=0 ;
+						 panelOutputfloatValues[3]=0 ;
+						 returnValue = rt_queue_write(&read_from_panel_queue,
+						 								 &panelOutputfloatValues,
+						 								 sizeof(panelOutputfloatValues),
+						 								 Q_URGENT);
+					 }
+
+					 //LAND//////////////////////////////////////////////////////////////////////
+					 if(tcpInput==TCP_COMM_XLAND_TRANSFER)
+					 {
+
+						 taskExist= rt_task_inquire(&land_task,NULL);
+						 if(taskExist!=0)
+						 {
+							 //delete al other tasks
+							 rt_task_delete(&takeoff_task);
+							 rt_task_delete(&hover_task);
+							 rt_task_delete(&climb_task);
+							 rt_task_delete(&land_task);
+
+						  returnValue = rt_task_create(&land_task,
+														"land_task",
+														0,
+														3,
+														T_JOINABLE);
+						returnValue = rt_task_start(&land_task,
+													&land_task_func,
+													NULL);
+						 }
+						 else
+						 {
+							 //task already running
+						 }
+					 }
+					 //HOVER//////////////////////////////////////////////////////////////////////
+					 if(tcpInput==TCP_COMM_XHOVER_TRANSFER)
+					 {
+
+						 taskExist= rt_task_inquire(&hover_task,NULL);
+						 if(taskExist!=0)
+						 {
+							 //delete al other tasks
+							 rt_task_delete(&takeoff_task);
+							 rt_task_delete(&land_task);
+							 rt_task_delete(&climb_task);
+							 rt_task_delete(&hover_task);
+
+						  returnValue = rt_task_create(&hover_task,
+														"hover_task",
+														0,
+														3,
+														T_JOINABLE);
+						returnValue = rt_task_start(&hover_task,
+													&hover_task_func,
+													NULL);
+						 }
+						 else
+						 {
+							 //task already running
+						 }
+					 }
+
+					 //CLIMB//////////////////////////////////////////////////////////////////////
+					 if(tcpInput==TCP_COMM_XCLIMB_TRANSFER)
+					 {
+
+						 taskExist= rt_task_inquire(&climb_task,NULL);
+						 if(taskExist!=0)
+						 {
+							 //delete al other tasks
+							 rt_task_delete(&takeoff_task);
+							 rt_task_delete(&land_task);
+							 rt_task_delete(&hover_task);
+							 rt_task_delete(&climb_task);
+
+						  returnValue = rt_task_create(&climb_task,
+														"climb_task",
+														0,
+														3,
+														T_JOINABLE);
+						returnValue = rt_task_start(&climb_task,
+													&climb_task_func,
+													NULL);
+						 }
+						 else
+						 {
+							 //task already running
+						 }
+					 }
+
+
 				 }
 
 
 			  rt_task_wait_period(NULL);
 		  }
-
-
-
-
-
+		  close(tcpAcceptSocketFD);
+		  close(tcpSocketFD);
 
 }/*(END) PANEL_TCP_TEST_INCOMING_TASK_FUNC*/
 
@@ -308,26 +637,25 @@ void panel_tcp_test_incoming_task_func(void *arg)
 	  /*init values*/
 	  returnValue 	= RETURN_OK;
 
-
 	  returnValue = rt_task_create(&panel_tcp_test_incoming_task,
 	 							   "panel_tcp_test_incoming_task",
 	 							    0,
-	 							   2,
-	 							   T_JOINABLE);
-	  returnValue = rt_task_create(&send_data_to_panel_task,
-	 	 							   "send_data_to_panel_task",
-	 	 							    0,
-	 	 							   3,
-	 	 							   T_JOINABLE);
-
+	 							    3,
+	 							    T_JOINABLE);
+   if (returnValue == RETURN_OK)
+   {
+   returnValue = rt_queue_create(&read_from_panel_queue,
+								read_from_panel_queue_Name,
+								PANEL_OUTPUT_BUFFER_SIZE,
+								Q_UNLIMITED,
+								Q_SHARED);
+   }
    if (returnValue == RETURN_OK)
    {
 	  /*start tasks*/
 	   returnValue = rt_task_start(&panel_tcp_test_incoming_task,
 	   							   &panel_tcp_test_incoming_task_func,
 	   							   NULL);
-
-
    }
    else
    {

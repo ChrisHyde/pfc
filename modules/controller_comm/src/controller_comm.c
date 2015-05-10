@@ -203,11 +203,13 @@ int xplane_controller_motors(int X,int Y,int Z,int R)
 	strcat(buffer,bufferMotor4);
 
 	//fprintf(stderr,"sending...%s\n",buffer);
-
+	if(controllerInFlight == 1 && controllerStartFlag1 == 1)
+		{
 	returnValue = rt_queue_write(&controller_inputQueue,
 								 &buffer,
 								 sizeof(buffer),
 								 Q_URGENT);
+		}
 
 	return(returnValue);
 }/*(END) XPLANE_CONTROLLER_MOTORS*/
