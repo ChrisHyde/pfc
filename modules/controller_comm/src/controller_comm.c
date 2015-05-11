@@ -303,6 +303,8 @@ void controller_read_task_func(void *arg)
    else
    {
 	   fprintf(stderr,"Open Controller port: Error.\r");
+	   connected = FALSE;
+	   close(controllerFd);
    }
 
 
@@ -338,7 +340,7 @@ void controller_read_task_func(void *arg)
 	 returnValue = rt_task_create(&controller_read_task,
 								   "controller_read_task",
 								   0,
-								   10,
+								   5,
 								   T_JOINABLE);
 
 

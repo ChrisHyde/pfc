@@ -222,7 +222,7 @@ void read_input_queues_task_func(void *arg)
                                //send controller Data to Xplane
 							   //send Xplane to Qt
 							   //send Qt to Xplane
-						   }
+				    }
 
 
 /*******************************************************************************************************************
@@ -272,7 +272,7 @@ int main (int argc, char *argv[])
 	  returnValue = rt_task_create(&read_input_queues_task,
 								  "read_input_queues_task",
 								  0,
-								  10,
+								  5,
 								  T_JOINABLE);
 	  }
 

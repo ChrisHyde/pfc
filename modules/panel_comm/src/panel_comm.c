@@ -13,6 +13,410 @@
 
 
 /*global variables*/
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
+
+
+void reverse_task_func(void *arg)
+{
+	float 	xplaneInputfloatValues[8];
+	float 	panelOutputfloatValues[4];
+    int 	xplaneBytesRead;
+    int 	returnValue;
+
+
+    /*init values*/
+    xplaneBytesRead = 0;
+    returnValue		= RETURN_OK;
+    returnValue= rt_queue_bind (&read_from_xplane_queue,
+    			  	  	  	  	  	  read_from_xplane_queue_Name,
+    								  TM_NONBLOCK);
+    if (returnValue == RETURN_OK)
+    {
+    	returnValue=rt_queue_flush(&read_from_xplane_queue);
+    	returnValue=rt_queue_flush(&read_from_panel_queue);
+    }
+
+	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
+  while(1)
+  {
+	 if (returnValue==RETURN_OK)
+	 {
+		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+											 &xplaneInputfloatValues,
+											 sizeof(xplaneInputfloatValues),
+											 TM_NONBLOCK);
+		 if (xplaneBytesRead<=0)
+		 {
+			 //fprintf(stderr,"REVERSE_TASK_FUNC_ERROR 1\n");
+		 }
+		 else
+		 {
+  /*fprintf(stderr,"%f,%f,%f,%f,%f,%f,%f,%f\n\n",xplaneInputfloatValues[0],
+										  xplaneInputfloatValues[1],
+										  xplaneInputfloatValues[2],
+										  xplaneInputfloatValues[3],
+										  xplaneInputfloatValues[4],
+										  xplaneInputfloatValues[5],
+										  xplaneInputfloatValues[6],
+										  xplaneInputfloatValues[7]);*/
+             if(xplaneInputfloatValues[0]<1 && xplaneInputfloatValues[0]<8 )
+             {
+
+            	    panelOutputfloatValues[0]=8.5 ;
+					panelOutputfloatValues[1]=8.5 ;
+					panelOutputfloatValues[2]=7.5 ;
+					panelOutputfloatValues[3]=7.5 ;
+
+
+             }
+             if(xplaneInputfloatValues[0]>8  )
+			  {
+            	panelOutputfloatValues[0]=7.5 ;
+				panelOutputfloatValues[1]=7.5 ;
+				panelOutputfloatValues[2]=8.5 ;
+				panelOutputfloatValues[3]=8.5 ;
+			  }
+		 }
+     }
+	 else
+	 {
+		 //fprintf(stderr,"REVERSE_TASK_FUNC_ERROR 2\n");
+	 }
+
+	 returnValue = rt_queue_write(&read_from_panel_queue,
+								 &panelOutputfloatValues,
+								 sizeof(panelOutputfloatValues),
+								 Q_URGENT);
+
+	 rt_task_wait_period(NULL);
+  }
+}/*END_REVERSE_TASK_FUNC*/
+
+
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
+
+
+void forward_task_func(void *arg)
+{
+	float 	xplaneInputfloatValues[8];
+	float 	panelOutputfloatValues[4];
+    int 	xplaneBytesRead;
+    int 	returnValue;
+
+
+    /*init values*/
+    xplaneBytesRead = 0;
+    returnValue		= RETURN_OK;
+    returnValue= rt_queue_bind (&read_from_xplane_queue,
+    			  	  	  	  	  	  read_from_xplane_queue_Name,
+    								  TM_NONBLOCK);
+    if (returnValue == RETURN_OK)
+    {
+    	returnValue=rt_queue_flush(&read_from_xplane_queue);
+    	returnValue=rt_queue_flush(&read_from_panel_queue);
+    }
+
+	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
+  while(1)
+  {
+	 if (returnValue==RETURN_OK)
+	 {
+		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+											 &xplaneInputfloatValues,
+											 sizeof(xplaneInputfloatValues),
+											 TM_NONBLOCK);
+		 if (xplaneBytesRead<=0)
+		 {
+			 //fprintf(stderr,"ROLL_RIGHT_TASK_FUNC_ERROR 1\n");
+		 }
+		 else
+		 {
+  /*fprintf(stderr,"%f,%f,%f,%f,%f,%f,%f,%f\n\n",xplaneInputfloatValues[0],
+										  xplaneInputfloatValues[1],
+										  xplaneInputfloatValues[2],
+										  xplaneInputfloatValues[3],
+										  xplaneInputfloatValues[4],
+										  xplaneInputfloatValues[5],
+										  xplaneInputfloatValues[6],
+										  xplaneInputfloatValues[7]);*/
+             if(xplaneInputfloatValues[0]<1 && xplaneInputfloatValues[0]>-8 )
+             {
+
+            	    panelOutputfloatValues[0]=7.5 ;
+					panelOutputfloatValues[1]=7.5 ;
+					panelOutputfloatValues[2]=8.5 ;
+					panelOutputfloatValues[3]=8.5 ;
+
+
+             }
+             if(xplaneInputfloatValues[0]<-8  )
+			  {
+            	panelOutputfloatValues[0]=8.5 ;
+				panelOutputfloatValues[1]=8.5 ;
+				panelOutputfloatValues[2]=7.5 ;
+				panelOutputfloatValues[3]=7.5 ;
+			  }
+		 }
+     }
+	 else
+	 {
+		 //fprintf(stderr,"FORWARD_TASK_FUNC_ERROR 2\n");
+	 }
+
+	 returnValue = rt_queue_write(&read_from_panel_queue,
+								 &panelOutputfloatValues,
+								 sizeof(panelOutputfloatValues),
+								 Q_URGENT);
+
+	 rt_task_wait_period(NULL);
+  }
+}/*END_FORWARD_TASK_FUNC*/
+
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
+
+
+void roll_right_task_func(void *arg)
+{
+	float 	xplaneInputfloatValues[8];
+	float 	panelOutputfloatValues[4];
+    int 	xplaneBytesRead;
+    int 	returnValue;
+
+
+    /*init values*/
+    xplaneBytesRead = 0;
+    returnValue		= RETURN_OK;
+    returnValue= rt_queue_bind (&read_from_xplane_queue,
+    			  	  	  	  	  	  read_from_xplane_queue_Name,
+    								  TM_NONBLOCK);
+    if (returnValue == RETURN_OK)
+    {
+    	returnValue=rt_queue_flush(&read_from_xplane_queue);
+    	returnValue=rt_queue_flush(&read_from_panel_queue);
+    }
+
+	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
+  while(1)
+  {
+	 if (returnValue==RETURN_OK)
+	 {
+		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+											 &xplaneInputfloatValues,
+											 sizeof(xplaneInputfloatValues),
+											 TM_NONBLOCK);
+		 if (xplaneBytesRead<=0)
+		 {
+			 //fprintf(stderr,"ROLL_RIGHT_TASK_FUNC_ERROR 1\n");
+		 }
+		 else
+		 {
+  /*fprintf(stderr,"%f,%f,%f,%f,%f,%f,%f,%f\n\n",xplaneInputfloatValues[0],
+										  xplaneInputfloatValues[1],
+										  xplaneInputfloatValues[2],
+										  xplaneInputfloatValues[3],
+										  xplaneInputfloatValues[4],
+										  xplaneInputfloatValues[5],
+										  xplaneInputfloatValues[6],
+										  xplaneInputfloatValues[7]);*/
+
+
+            	    panelOutputfloatValues[0]=9 ;
+					panelOutputfloatValues[1]=8 ;
+					panelOutputfloatValues[2]=8 ;
+					panelOutputfloatValues[3]=9 ;
+
+					if(xplaneInputfloatValues[0]>=1)//IS pitch UP
+					{
+						panelOutputfloatValues[0]=8.5 ;
+						panelOutputfloatValues[1]=8.5 ;
+						panelOutputfloatValues[2]=9.7 ;
+						panelOutputfloatValues[3]=9.7 ;
+					}
+					else if(xplaneInputfloatValues[0]<=-1)//IS pitch DOWN
+					{
+						panelOutputfloatValues[0]=9.7 ;
+						panelOutputfloatValues[1]=9.7 ;
+						panelOutputfloatValues[2]=8.5 ;
+						panelOutputfloatValues[3]=8.5 ;
+					}
+
+             if(xplaneInputfloatValues[1]>15  )
+			  {
+            	panelOutputfloatValues[0]=8.5 ;
+				panelOutputfloatValues[1]=9 ;
+				panelOutputfloatValues[2]=9 ;
+				panelOutputfloatValues[3]=8.5 ;
+
+				if(xplaneInputfloatValues[0]>=1)//IS pitch UP
+				{
+					panelOutputfloatValues[0]=8.5 ;
+					panelOutputfloatValues[1]=8.5 ;
+					panelOutputfloatValues[2]=9.7 ;
+					panelOutputfloatValues[3]=9.7 ;
+				}
+				else if(xplaneInputfloatValues[0]<=-1)//IS pitch DOWN
+				{
+					panelOutputfloatValues[0]=9.7 ;
+					panelOutputfloatValues[1]=9.7 ;
+					panelOutputfloatValues[2]=8.5 ;
+					panelOutputfloatValues[3]=8.5 ;
+				}
+
+			  }
+
+
+		 }
+     }
+	 else
+	 {
+		 //fprintf(stderr,"ROLL_RIGHT_TASK_FUNC_ERROR 2\n");
+	 }
+
+	 returnValue = rt_queue_write(&read_from_panel_queue,
+								 &panelOutputfloatValues,
+								 sizeof(panelOutputfloatValues),
+								 Q_URGENT);
+
+	 rt_task_wait_period(NULL);
+  }
+}/*END_ROLL_RIGHT_TASK_FUNC*/
+
+/*******************************************************************************
+ * Type         : ...
+ * Name         : ...
+ * Description  : ...
+ * Globals      : ...
+ * Input params : ...
+ * Output params: ...
+ * Return value : ...
+ * Features     : ...
+ *
+ ******************************************************************************/
+
+
+void roll_left_task_func(void *arg)
+{
+	float 	xplaneInputfloatValues[8];
+	float 	panelOutputfloatValues[4];
+    int 	xplaneBytesRead;
+    int 	returnValue;
+
+
+    /*init values*/
+    xplaneBytesRead = 0;
+    returnValue		= RETURN_OK;
+    returnValue= rt_queue_bind (&read_from_xplane_queue,
+    			  	  	  	  	  	  read_from_xplane_queue_Name,
+    								  TM_NONBLOCK);
+    if (returnValue == RETURN_OK)
+    {
+    	returnValue=rt_queue_flush(&read_from_xplane_queue);
+    	returnValue=rt_queue_flush(&read_from_panel_queue);
+    }
+
+	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
+  while(1)
+  {
+	 if (returnValue==RETURN_OK)
+	 {
+		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+											 &xplaneInputfloatValues,
+											 sizeof(xplaneInputfloatValues),
+											 TM_NONBLOCK);
+		 if (xplaneBytesRead<=0)
+		 {
+			 //fprintf(stderr,"ROLL_LEFT_TASK_FUNC_ERROR 1\n");
+		 }
+		 else
+		 {
+  /*fprintf(stderr,"%f,%f,%f,%f,%f,%f,%f,%f\n\n",xplaneInputfloatValues[0],
+										  xplaneInputfloatValues[1],
+										  xplaneInputfloatValues[2],
+										  xplaneInputfloatValues[3],
+										  xplaneInputfloatValues[4],
+										  xplaneInputfloatValues[5],
+										  xplaneInputfloatValues[6],
+										  xplaneInputfloatValues[7]);*/
+             if(xplaneInputfloatValues[1]<1  )
+             {
+
+            	    panelOutputfloatValues[0]=8.5 ;
+					panelOutputfloatValues[1]=9 ;
+					panelOutputfloatValues[2]=9 ;
+					panelOutputfloatValues[3]=8.5 ;
+
+
+             }
+             if(xplaneInputfloatValues[1]<-15  )
+			  {
+            	panelOutputfloatValues[0]=9 ;
+				panelOutputfloatValues[1]=8.5 ;
+				panelOutputfloatValues[2]=8.5 ;
+				panelOutputfloatValues[3]=9 ;
+			  }
+				if(xplaneInputfloatValues[0]>=1)//IS pitch UP
+				{
+					panelOutputfloatValues[0]=8 ;
+					panelOutputfloatValues[1]=8 ;
+					panelOutputfloatValues[2]=9 ;
+					panelOutputfloatValues[3]=9 ;
+				}
+				 if(xplaneInputfloatValues[0]<=-1)//IS pitch DOWN
+				{
+					panelOutputfloatValues[0]=9 ;
+					panelOutputfloatValues[1]=9 ;
+					panelOutputfloatValues[2]=8 ;
+					panelOutputfloatValues[3]=8 ;
+				}
+
+		 }
+     }
+	 else
+	 {
+		 //fprintf(stderr,"ROLL_LEFT_TASK_FUNC_ERROR 2\n");
+	 }
+
+	 returnValue = rt_queue_write(&read_from_panel_queue,
+								 &panelOutputfloatValues,
+								 sizeof(panelOutputfloatValues),
+								 Q_URGENT);
+
+	 rt_task_wait_period(NULL);
+  }
+}/*END_ROLL_LEFT_TASK_FUNC*/
+
+
+
 
 /*******************************************************************************
  * Type         : ...
@@ -38,7 +442,6 @@ void yaw_left_task_func(void *arg)
     /*init values*/
     xplaneBytesRead = 0;
     returnValue		= RETURN_OK;
-    fprintf(stderr,"holaa2\n");
     returnValue= rt_queue_bind (&read_from_xplane_queue,
     			  	  	  	  	  	  read_from_xplane_queue_Name,
     								  TM_NONBLOCK);
@@ -48,14 +451,9 @@ void yaw_left_task_func(void *arg)
     	returnValue=rt_queue_flush(&read_from_panel_queue);
     }
 
-
-
 	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
   while(1)
   {
-
-
-
 	 if (returnValue==RETURN_OK)
 	 {
 		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
@@ -64,7 +462,7 @@ void yaw_left_task_func(void *arg)
 											 TM_NONBLOCK);
 		 if (xplaneBytesRead<=0)
 		 {
-			 fprintf(stderr,"YAW_LEFT_TASK_FUNC_ERROR 1\n");
+			 //fprintf(stderr,"YAW_LEFT_TASK_FUNC_ERROR 1\n");
 		 }
 		 else
 		 {
@@ -78,35 +476,31 @@ void yaw_left_task_func(void *arg)
 										  xplaneInputfloatValues[7]);*/
              if(xplaneInputfloatValues[1]<1  )
              {
-
-            	    panelOutputfloatValues[0]=9.2 ;
-					panelOutputfloatValues[1]=7.8 ;
-					panelOutputfloatValues[2]=9.2 ;
-					panelOutputfloatValues[3]=7.8 ;
-
-
+            	    panelOutputfloatValues[0]=9.5 ;
+					panelOutputfloatValues[1]=8 ;
+					panelOutputfloatValues[2]=9.5 ;
+					panelOutputfloatValues[3]=8 ;
+             }
 						if(xplaneInputfloatValues[0]>=1)//IS pitch UP
 						{
-							panelOutputfloatValues[0]=7.5 ;
-							panelOutputfloatValues[1]=7.5 ;
+							panelOutputfloatValues[0]=8.5 ;
+							panelOutputfloatValues[1]=8.5 ;
 							panelOutputfloatValues[2]=9.5 ;
 							panelOutputfloatValues[3]=9.5 ;
 						}
-						else if(xplaneInputfloatValues[0]<=-1)//IS pitch DOWN
+						if(xplaneInputfloatValues[0]<=-1)//IS pitch DOWN
 						{
 							panelOutputfloatValues[0]=9.5 ;
 							panelOutputfloatValues[1]=9.5 ;
-							panelOutputfloatValues[2]=7.5 ;
-							panelOutputfloatValues[3]=7.5 ;
+							panelOutputfloatValues[2]=8.5 ;
+							panelOutputfloatValues[3]=8.5 ;
 						}
-             }
-
 
 		 }
      }
 	 else
 	 {
-		 fprintf(stderr,"YAW_LEFT_TASK_FUNC_ERROR 2\n");
+		 //fprintf(stderr,"YAW_LEFT_TASK_FUNC_ERROR 2\n");
 	 }
 
 	 returnValue = rt_queue_write(&read_from_panel_queue,
@@ -168,7 +562,7 @@ void yaw_right_task_func(void *arg)
 											 TM_NONBLOCK);
 		 if (xplaneBytesRead<=0)
 		 {
-			 fprintf(stderr,"YAW_RIGHT_TASK_FUNC_ERROR 1\n");
+			 //fprintf(stderr,"YAW_RIGHT_TASK_FUNC_ERROR 1\n");
 		 }
 		 else
 		 {
@@ -183,34 +577,31 @@ void yaw_right_task_func(void *arg)
              if(xplaneInputfloatValues[1]<1  )
              {
 
-            	    panelOutputfloatValues[0]=7.8 ;
-					panelOutputfloatValues[1]=9.2 ;
-					panelOutputfloatValues[2]=7.8 ;
-					panelOutputfloatValues[3]=9.2 ;
-
+            	    panelOutputfloatValues[0]=8 ;
+					panelOutputfloatValues[1]=9.5 ;
+					panelOutputfloatValues[2]=8 ;
+					panelOutputfloatValues[3]=9.5 ;
+             }
 
 						if(xplaneInputfloatValues[0]>=1)//IS pitch UP
 						{
-							panelOutputfloatValues[0]=7.5 ;
-							panelOutputfloatValues[1]=7.5 ;
-							panelOutputfloatValues[2]=9.5 ;
-							panelOutputfloatValues[3]=9.5 ;
+							panelOutputfloatValues[0]=8.5 ;
+							panelOutputfloatValues[1]=8.5 ;
+							panelOutputfloatValues[2]=9.7 ;
+							panelOutputfloatValues[3]=9.7 ;
 						}
-						else if(xplaneInputfloatValues[0]<=-1)//IS pitch DOWN
+						 if(xplaneInputfloatValues[0]<=-1)//IS pitch DOWN
 						{
-							panelOutputfloatValues[0]=9.5 ;
-							panelOutputfloatValues[1]=9.5 ;
-							panelOutputfloatValues[2]=7.5 ;
-							panelOutputfloatValues[3]=7.5 ;
+							panelOutputfloatValues[0]=9.7 ;
+							panelOutputfloatValues[1]=9.7 ;
+							panelOutputfloatValues[2]=8.5 ;
+							panelOutputfloatValues[3]=8.5 ;
 						}
-             }
-
-
 		 }
      }
 	 else
 	 {
-		 fprintf(stderr,"YAW_RIGHT_TASK_FUNC_ERROR 2\n");
+		 //fprintf(stderr,"YAW_RIGHT_TASK_FUNC_ERROR 2\n");
 	 }
 
 	 returnValue = rt_queue_write(&read_from_panel_queue,
@@ -276,7 +667,7 @@ void descend_task_func(void *arg)
 											 TM_NONBLOCK);
 		 if (xplaneBytesRead<=0)
 		 {
-			 fprintf(stderr,"DESCEND_TASK_FUNC_ERROR 1\n");
+			 //fprintf(stderr,"DESCEND_TASK_FUNC_ERROR 1\n");
 		 }
 		 else
 		 {
@@ -338,7 +729,7 @@ void descend_task_func(void *arg)
      }
 	 else
 	 {
-		 fprintf(stderr,"DESCEND_TASK_FUNC_ERROR 2\n");
+		 //fprintf(stderr,"DESCEND_TASK_FUNC_ERROR 2\n");
 	 }
 
 	 returnValue = rt_queue_write(&read_from_panel_queue,
@@ -407,7 +798,7 @@ void climb_task_func(void *arg)
 											 TM_NONBLOCK);
 		 if (xplaneBytesRead<=0)
 		 {
-			 fprintf(stderr,"CLIMB_TASK_FUNC_ERROR 1\n");
+			 //fprintf(stderr,"CLIMB_TASK_FUNC_ERROR 1\n");
 		 }
 		 else
 		 {
@@ -444,7 +835,7 @@ void climb_task_func(void *arg)
      }
 	 else
 	 {
-		 fprintf(stderr,"CLIMB_TASK_FUNC_ERROR 2\n");
+		 //fprintf(stderr,"CLIMB_TASK_FUNC_ERROR 2\n");
 	 }
 	 returnValue=rt_queue_flush(&read_from_xplane_queue);
 
@@ -495,6 +886,7 @@ void hover_task_func(void *arg)
 								 &xplaneInputfloatValues,
 								 sizeof(xplaneInputfloatValues),
 								 TM_NONBLOCK);
+
     if(xplaneBytesRead>=0)
     {
     altitude = xplaneInputfloatValues[3];
@@ -503,29 +895,20 @@ void hover_task_func(void *arg)
     {
     	returnValue = RETURN_ERROR;
     }
+
+
     if (returnValue == RETURN_OK)
        {
 
     	returnValue=rt_queue_flush(&read_from_panel_queue);
        }
 
+    	fprintf(stderr,"ATILTUDE: %f\n",altitude);
 
-
-
-fprintf(stderr,"ATILTUDE: %f\n",altitude);
-
-      returnValue= rt_queue_bind (&read_from_xplane_queue,
-			  	  	  	  	  	  read_from_xplane_queue_Name,
-								  TM_NONBLOCK);
-	  fprintf(stderr,"Bind returnValue %d\n",returnValue);
 
 	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
   while(1)
   {
-
-
-
-
 	 if (returnValue==RETURN_OK)
 	 {
 		 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
@@ -535,7 +918,7 @@ fprintf(stderr,"ATILTUDE: %f\n",altitude);
 
 		 if (xplaneBytesRead<=0)
 		 {
-            fprintf(stderr,"HOVER_TASK_FUNC_ERROR 1 \n");
+            //fprintf(stderr,"HOVER_TASK_FUNC_ERROR 1 \n");
 		 }
 		 else
 		 {
@@ -593,8 +976,6 @@ fprintf(stderr,"ATILTUDE: %f\n",altitude);
 							}
 			  }
 		 }
-
-
      }
 	 returnValue = rt_queue_write(&read_from_panel_queue,
 								 &panelOutputfloatValues,
@@ -603,7 +984,7 @@ fprintf(stderr,"ATILTUDE: %f\n",altitude);
 
 	 if(returnValue == RETURN_ERROR)
 	 {
-		 fprintf(stderr,"HOVER_TASK_FUNC_ERROR 2\n");
+		 //fprintf(stderr,"HOVER_TASK_FUNC_ERROR 2\n");
 	 }
 	 rt_task_wait_period(NULL);
   }
@@ -646,13 +1027,11 @@ void land_task_func(void *arg)
      returnValue= rt_queue_bind (&read_from_xplane_queue,
    			  	  	  	  	  	  read_from_xplane_queue_Name,
    								  TM_NONBLOCK);
-   	  fprintf(stderr,"LAND_TASK_FUNC_ERROR 0: %d\n",returnValue);
+   	  //fprintf(stderr,"LAND_TASK_FUNC_ERROR 0: %d\n",returnValue);
 
 	   rt_task_set_periodic(NULL, TM_NOW, 2000*1000*100);
   while(1)
   {
-
-
 
 	 if (returnValue==RETURN_OK)
 	 {
@@ -662,17 +1041,17 @@ void land_task_func(void *arg)
 											 TM_NONBLOCK);
 		 if (xplaneBytesRead<=0)
 		 {
-			 fprintf(stderr,"LAND_TASK_FUNC_ERROR 1\n");
+			 //fprintf(stderr,"LAND_TASK_FUNC_ERROR 1\n");
 		 }
 		 else
 		 {
              if(xplaneInputfloatValues[3]>=15 )
              {//15 feet takeoff level
 
-            	    panelOutputfloatValues[0]=6 ;
-					panelOutputfloatValues[1]=6 ;
-					panelOutputfloatValues[2]=6 ;
-					panelOutputfloatValues[3]=6 ;
+            	    panelOutputfloatValues[0]=5 ;
+					panelOutputfloatValues[1]=5 ;
+					panelOutputfloatValues[2]=5 ;
+					panelOutputfloatValues[3]=5 ;
 
 					if(xplaneInputfloatValues[0]>=2)//IS pitch UP
 					{
@@ -731,7 +1110,7 @@ void land_task_func(void *arg)
      }
 	 else
 	 {
-		 fprintf(stderr,"LAND_TASK_FUNC_ERROR 2\n");
+		 //fprintf(stderr,"LAND_TASK_FUNC_ERROR 2\n");
 	 }
 	 returnValue = rt_queue_write(&read_from_panel_queue,
 								 &panelOutputfloatValues,
@@ -797,7 +1176,7 @@ void takeoff_task_func(void *arg)
 											 TM_NONBLOCK);
 		 if (xplaneBytesRead<=0)
 		 {
-			 fprintf(stderr,"TAKEOFF_TASK_FUNC_ERROR 1\n");
+			 //fprintf(stderr,"TAKEOFF_TASK_FUNC_ERROR 1\n");
 		 }
 		 else
 		 {
@@ -851,7 +1230,7 @@ void takeoff_task_func(void *arg)
      }
 	 else
 	 {
-		 fprintf(stderr,"TAKEOFF_TASK_FUNC_ERROR 2\n");
+		 //fprintf(stderr,"TAKEOFF_TASK_FUNC_ERROR 2\n");
 	 }
 	 returnValue = rt_queue_write(&read_from_panel_queue,
 								 &panelOutputfloatValues,
@@ -942,7 +1321,7 @@ void panel_tcp_test_incoming_task_func(void *arg)
 				 {
 					 //TAKEOFF//////////////////////////////////////////////////////////////////////
 					 if(tcpInput==TCP_COMM_XTAKEOFF_TRANSFER)
-					 { fprintf(stderr,"holaaa\n");
+					 {
 						 taskExist= rt_task_inquire(&takeoff_task,NULL);
 						 if(taskExist!=0)
 						 {
@@ -954,7 +1333,10 @@ void panel_tcp_test_incoming_task_func(void *arg)
 							 rt_task_delete(&descend_task);
 							 rt_task_delete(&yaw_left_task);
 							 rt_task_delete(&yaw_right_task);
-
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
 						  returnValue = rt_task_create(&takeoff_task,
 														"takeoff_task",
 														0,
@@ -980,6 +1362,10 @@ void panel_tcp_test_incoming_task_func(void *arg)
 						 rt_task_delete(&land_task);
 						 rt_task_delete(&yaw_left_task);
 						 rt_task_delete(&yaw_right_task);
+						 rt_task_delete(&roll_left_task);
+						 rt_task_delete(&roll_right_task);
+						 rt_task_delete(&forward_task);
+						 rt_task_delete(&reverse_task);
 						 panelOutputfloatValues[0]=0 ;
 						 panelOutputfloatValues[1]=0 ;
 						 panelOutputfloatValues[2]=0 ;
@@ -1005,7 +1391,10 @@ void panel_tcp_test_incoming_task_func(void *arg)
 							 rt_task_delete(&land_task);
 							 rt_task_delete(&yaw_left_task);
 							 rt_task_delete(&yaw_right_task);
-
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
 						  returnValue = rt_task_create(&land_task,
 														"land_task",
 														0,
@@ -1035,7 +1424,10 @@ void panel_tcp_test_incoming_task_func(void *arg)
 							 rt_task_delete(&hover_task);
 							 rt_task_delete(&yaw_left_task);
 							 rt_task_delete(&yaw_right_task);
-
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
 						  returnValue = rt_task_create(&hover_task,
 														"hover_task",
 														0,
@@ -1066,6 +1458,10 @@ void panel_tcp_test_incoming_task_func(void *arg)
 							 rt_task_delete(&climb_task);
 							 rt_task_delete(&yaw_left_task);
 							 rt_task_delete(&yaw_right_task);
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
 						  returnValue = rt_task_create(&climb_task,
 														"climb_task",
 														0,
@@ -1095,7 +1491,10 @@ void panel_tcp_test_incoming_task_func(void *arg)
 							 rt_task_delete(&descend_task);
 							 rt_task_delete(&yaw_left_task);
 							 rt_task_delete(&yaw_right_task);
-
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
 						  returnValue = rt_task_create(&descend_task,
 														"descend_task",
 														0,
@@ -1116,7 +1515,7 @@ void panel_tcp_test_incoming_task_func(void *arg)
 
 						 taskExist= rt_task_inquire(&yaw_left_task,NULL);
 						 if(taskExist!=0)
-						 { fprintf(stderr,"holaa\n");
+						 {
 							 //delete al other tasks
 							 rt_task_delete(&takeoff_task);
 							 rt_task_delete(&land_task);
@@ -1125,6 +1524,10 @@ void panel_tcp_test_incoming_task_func(void *arg)
 							 rt_task_delete(&descend_task);
 							 rt_task_delete(&yaw_left_task);
 							 rt_task_delete(&yaw_right_task);
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
 						  returnValue = rt_task_create(&yaw_left_task,
 														"yaw_left_task",
 														0,
@@ -1157,6 +1560,10 @@ void panel_tcp_test_incoming_task_func(void *arg)
 							 rt_task_delete(&descend_task);
 							 rt_task_delete(&yaw_left_task);
 							 rt_task_delete(&yaw_right_task);
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
 						  returnValue = rt_task_create(&yaw_right_task,
 														"yaw_right_task",
 														0,
@@ -1173,10 +1580,143 @@ void panel_tcp_test_incoming_task_func(void *arg)
 						 }
 					 }
 
+					 //ROLL LEFT//////////////////////////////////////////////////////////////////////
+					 if(tcpInput==TCP_COMM_XROLL_LEFT_TRANSFER)
+					 {
 
+						 taskExist= rt_task_inquire(&roll_left_task,NULL);
+						 if(taskExist!=0)
+						 {
+							 //delete al other tasks
+							 rt_task_delete(&takeoff_task);
+							 rt_task_delete(&land_task);
+							 rt_task_delete(&hover_task);
+							 rt_task_delete(&climb_task);
+							 rt_task_delete(&descend_task);
+							 rt_task_delete(&yaw_left_task);
+							 rt_task_delete(&yaw_right_task);
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
+						  returnValue = rt_task_create(&roll_left_task,
+														"roll_left_task",
+														0,
+														1,
+														T_JOINABLE);
+						returnValue = rt_task_start(&roll_left_task,
+													&roll_left_task_func,
+													NULL);
+						 }
 
+						 else
+						 {
+							 //task already running
+						 }
+					 }
+					 //ROLL RIGHT//////////////////////////////////////////////////////////////////////
+					 if(tcpInput==TCP_COMM_XROLL_RIGHT_TRANSFER)
+					 {
 
+						 taskExist= rt_task_inquire(&roll_right_task,NULL);
+						 if(taskExist!=0)
+						 {
+							 //delete al other tasks
+							 rt_task_delete(&takeoff_task);
+							 rt_task_delete(&land_task);
+							 rt_task_delete(&hover_task);
+							 rt_task_delete(&climb_task);
+							 rt_task_delete(&descend_task);
+							 rt_task_delete(&yaw_left_task);
+							 rt_task_delete(&yaw_right_task);
+							 rt_task_delete(&roll_left_task);
+							 rt_task_delete(&roll_right_task);
+							 rt_task_delete(&forward_task);
+							 rt_task_delete(&reverse_task);
+						  returnValue = rt_task_create(&roll_right_task,
+														"roll_right_task",
+														0,
+														1,
+														T_JOINABLE);
+						returnValue = rt_task_start(&roll_right_task,
+													&roll_right_task_func,
+													NULL);
+						 }
 
+						 else
+						 {
+							 //task already running
+						 }
+					 }
+					 //FORWARD//////////////////////////////////////////////////////////////////////
+						 if(tcpInput==TCP_COMM_XFORWARD_TRANSFER)
+						 {
+
+							 taskExist= rt_task_inquire(&forward_task,NULL);
+							 if(taskExist!=0)
+							 {
+								 //delete al other tasks
+								 rt_task_delete(&takeoff_task);
+								 rt_task_delete(&land_task);
+								 rt_task_delete(&hover_task);
+								 rt_task_delete(&climb_task);
+								 rt_task_delete(&descend_task);
+								 rt_task_delete(&yaw_left_task);
+								 rt_task_delete(&yaw_right_task);
+								 rt_task_delete(&roll_left_task);
+								 rt_task_delete(&roll_right_task);
+								 rt_task_delete(&forward_task);
+								 rt_task_delete(&reverse_task);
+							  returnValue = rt_task_create(&forward_task,
+															"forward_task",
+															0,
+															1,
+															T_JOINABLE);
+							returnValue = rt_task_start(&forward_task,
+														&forward_task_func,
+														NULL);
+							 }
+
+							 else
+							 {
+								 //task already running
+							 }
+						 }
+
+						 //REVERSE//////////////////////////////////////////////////////////////////////
+						 if(tcpInput==TCP_COMM_XREVERSE_TRANSFER)
+						 {
+
+							 taskExist= rt_task_inquire(&reverse_task,NULL);
+							 if(taskExist!=0)
+							 {
+								 //delete al other tasks
+								 rt_task_delete(&takeoff_task);
+								 rt_task_delete(&land_task);
+								 rt_task_delete(&hover_task);
+								 rt_task_delete(&climb_task);
+								 rt_task_delete(&descend_task);
+								 rt_task_delete(&yaw_left_task);
+								 rt_task_delete(&yaw_right_task);
+								 rt_task_delete(&roll_left_task);
+								 rt_task_delete(&roll_right_task);
+								 rt_task_delete(&forward_task);
+								 rt_task_delete(&reverse_task);
+							  returnValue = rt_task_create(&reverse_task,
+															"reverse_task",
+															0,
+															1,
+															T_JOINABLE);
+							returnValue = rt_task_start(&reverse_task,
+														&reverse_task_func,
+														NULL);
+							 }
+
+							 else
+							 {
+								 //task already running
+							 }
+						 }
 
 			  rt_task_wait_period(NULL);
 		  }
