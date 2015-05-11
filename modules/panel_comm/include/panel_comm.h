@@ -15,9 +15,9 @@
 #define TCP_COMM_XCLIMB_TRANSFER 		4
 #define TCP_COMM_XROLL_LEFT_TRANSFER 	"tcp_comm_xroll_left_transfer"
 #define TCP_COMM_XROLL_RIGHT_TRANSFER 	"tcp_comm_xroll_right_transfer"
-#define TCP_COMM_XYAW_LEFT_TRANSFER 	"tcp_comm_xyaw_left_transfer"
-#define TCP_COMM_XYAW_RIGHT_TRANSFER 	"tcp_comm_xyaw_right_transfer"
-#define TCP_COMM_XDESCENT_TRANSFER 		"tcp_comm_xdescent_transfer"
+#define TCP_COMM_XYAW_LEFT_TRANSFER 	8
+#define TCP_COMM_XYAW_RIGHT_TRANSFER 	9
+#define TCP_COMM_XDESCENT_TRANSFER 		5
 #define TCP_COMM_XSTOP_TRANSFER 		0
 #define TCP_COMM_XTAKEOFF_TRANSFER 		1
 #define TCP_COMM_XLAND_TRANSFER 		2
@@ -44,9 +44,19 @@ RT_TASK  takeoff_task;
 RT_TASK  land_task;
 RT_TASK  hover_task;
 RT_TASK  climb_task;
+RT_TASK  descend_task;
+RT_TASK  yaw_left_task;
+RT_TASK  yaw_right_task;
 
 void panel_tcp_test_incoming_task_func(void *arg);
 void takeoff_task_func(void *arg);
+void land_task_func(void *arg);
+void hover_task_func(void *arg);
+void climb_task_func(void *arg);
+void descend_task_func(void *arg);
+void yaw_left_task_func(void *arg);
+void yaw_right_task_func(void *arg);
+
 int  panel_comm_init();
 
 

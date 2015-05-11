@@ -336,17 +336,18 @@ void xplane_write_task_func(void *arg)
 	if(returnValue==RETURN_OK)
 	{
 		rt_task_set_periodic(NULL, TM_NOW, 1000*1000*10);
+		 if (returnValue == RETURN_OK)
+		  {
+		  returnValue= rt_queue_bind (&write_to_xplane_queue,
+									  write_to_xplane_queue_Name,
+									  TM_NONBLOCK);
+		  }
 
 	  while(1)
 	  {
 
 
-		  if (returnValue == RETURN_OK)
-		  {
-		  returnValue= rt_queue_bind (&write_to_xplane_queue,
-				  	  	  	  	  	  write_to_xplane_queue_Name,
-									  TM_NONBLOCK);
-		  }
+
 		  if (returnValue == RETURN_OK)
 		  {
 			  //xplaneOutputDecimalValues = malloc(sizeof(*xplaneOutputDecimalValues));
@@ -375,7 +376,7 @@ void xplane_write_task_func(void *arg)
 		  }
 		  if(returnValue==RETURN_OK)
 		  {
-			  /*fprintf(stderr,"D: %f, %f, %f, %f\n",xplaneOutputDecimalValues.M1,
+			 /* fprintf(stderr,"D: %f, %f, %f, %f\n",xplaneOutputDecimalValues.M1,
 			  					xplaneOutputDecimalValues.M2,
 			  					xplaneOutputDecimalValues.M3,
 			  					xplaneOutputDecimalValues.M4);*/

@@ -53,7 +53,18 @@ void read_input_queues_task_func(void *arg)
 	m3						= 0.0;
 	m4						= 0.0;
 
-
+	returnValue= rt_queue_bind (&acp220_inputQueue,
+							   acp220_inputQueueName,
+							   TM_NONBLOCK);
+	 returnValue= rt_queue_bind (&controller_inputQueue,
+							   controller_inputQueueName,
+							   TM_NONBLOCK);
+   if (returnValue == RETURN_OK)
+	{
+   returnValue= rt_queue_bind (&read_from_panel_queue,
+							   read_from_panel_queue_Name,
+							   TM_NONBLOCK);
+	}
 
 	rt_task_set_periodic(NULL, TM_NOW, 1000*1000*10);
 
@@ -76,9 +87,7 @@ void read_input_queues_task_func(void *arg)
 			m4					= 0.0;
 		   if (returnValue == RETURN_OK)
 		   {
-			   returnValue= rt_queue_bind (&acp220_inputQueue,
-										   acp220_inputQueueName,
-										   TM_NONBLOCK);
+
 
 			   if (returnValue == RETURN_OK)
 			   {
@@ -94,15 +103,6 @@ void read_input_queues_task_func(void *arg)
 				   {
 
 
-					   returnValue= rt_queue_bind (&controller_inputQueue,
-							   	   	   	   	   	   controller_inputQueueName,
-												   TM_NONBLOCK);
-					   if (returnValue == RETURN_OK)
-					  	{
-					   returnValue= rt_queue_bind (&read_from_panel_queue,
-							   	   	   	   	       read_from_panel_queue_Name,
-												   TM_NONBLOCK);
-					  	}
 
 					   if (returnValue == RETURN_OK)
 					   {
@@ -206,14 +206,16 @@ void read_input_queues_task_func(void *arg)
 
 
 						   }
-						       /*fprintf(stderr," %f\n",queue_Packet.M1);
+						      /* fprintf(stderr," %f\n",queue_Packet.M1);
 							   fprintf(stderr," %f\n",queue_Packet.M2);
 							   fprintf(stderr," %f\n",queue_Packet.M3);
-							   fprintf(stderr," %f\n",queue_Packet.M4);*/
+							   fprintf(stderr," %f\n\n\n",queue_Packet.M4);*/
 						   returnValue = rt_queue_write(&write_to_xplane_queue,
 														 &queue_Packet,
 														 sizeof(queue_Packet),
 														 Q_URGENT);
+						   returnValue=rt_queue_flush(&read_from_panel_queue);
+						   returnValue=rt_queue_flush(&acp220_inputQueue);
                            }
 
 
@@ -228,6 +230,7 @@ void read_input_queues_task_func(void *arg)
 				   //APC220 Connected /////////////////////////////////////////////////////
 				   else
 				   {
+
 					   //send controller Data to APC220
 					   //send Qt to Apc220
 					   //send APC220 data to xplane & Qt
@@ -252,7 +255,7 @@ void read_input_queues_task_func(void *arg)
 }/*(END) READ_INPUT__QUEUES_TASK_FUNC*/
 
 
-int main(int argc,char *argv[])
+int main (int argc, char *argv[])
 {
 	  int returnValue;
 
@@ -290,26 +293,19 @@ int main(int argc,char *argv[])
 								    Q_UNLIMITED,
 								    Q_SHARED);
 	  }
-	  if (returnValue == RETURN_OK)
-	  {
-	  returnValue = rt_queue_create(&write_to_panel_queue,
-									write_to_panel_queue_Name,
-									PANEL_OUTPUT_BUFFER_SIZE,
-									Q_UNLIMITED,
-									Q_SHARED);
-	  }
+
 
 
 
 	  /*Initialize Modules */////////////////////////////////////////
 	  if (returnValue == RETURN_OK)
 	  {
-	    //returnValue = apc220_comm_init();
+	    returnValue = apc220_comm_init();
 	  }
 
 	  if (returnValue == RETURN_OK)
 	  {
-		  //returnValue = controller_comm_init();
+		  returnValue = controller_comm_init();
 	  }
 	  if (returnValue == RETURN_OK)
 	  {
@@ -321,6 +317,7 @@ int main(int argc,char *argv[])
 	  }
 	  if (returnValue == RETURN_OK)
 	  {
+
 	  returnValue = rt_task_start(&read_input_queues_task,
 	  							  &read_input_queues_task_func,
 	  							  NULL);
@@ -328,7 +325,7 @@ int main(int argc,char *argv[])
 
 	  else
 	  {
-
+		  fprintf(stderr,"retunrValue %d\n",returnValue);
 	  }
 
 	while(1)
