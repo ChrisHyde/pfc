@@ -837,7 +837,7 @@ void climb_task_func(void *arg)
 	 {
 		 //fprintf(stderr,"CLIMB_TASK_FUNC_ERROR 2\n");
 	 }
-	 returnValue=rt_queue_flush(&read_from_xplane_queue);
+
 
 	 returnValue = rt_queue_write(&read_from_panel_queue,
 								 &panelOutputfloatValues,
@@ -894,6 +894,23 @@ void hover_task_func(void *arg)
     else
     {
     	returnValue = RETURN_ERROR;
+    }
+
+    if (altitude == 0)
+    {
+
+    	 xplaneBytesRead = rt_queue_read(&read_from_xplane_queue,
+    									 &xplaneInputfloatValues,
+    									 sizeof(xplaneInputfloatValues),
+    									 TM_NONBLOCK);
+    	 if(xplaneBytesRead>=0)
+    	     {
+    	     altitude = xplaneInputfloatValues[3];
+    	     }
+    	     else
+    	     {
+    	     	returnValue = RETURN_ERROR;
+    	     }
     }
 
 

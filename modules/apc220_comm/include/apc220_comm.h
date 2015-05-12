@@ -9,7 +9,7 @@
 #define APC220_OK_CONNECTION            50
 #define MAX_CONNECTION_ATTEMPTS 	     5
 #define PORT 						     "/dev/ttyUSB0"
-#define ACK_INPUT_MSG_SIZE				 50
+#define ACK_INPUT_MSG_SIZE				 30
 
 
 

@@ -43,14 +43,15 @@ void apc220_write_task_func(void *arg)
 	rt_task_set_periodic(NULL, TM_NOW, 6000*1000*10);
 
 	fprintf(stderr,"\n");
+	if (returnValue == RETURN_OK)
+	  {
+	  returnValue= rt_queue_bind (&acp220_outputQueue,
+								  acp220_outputQueueName,
+								  TM_NONBLOCK);
+	  }
 	  while(1)
 	  {
-		        if (returnValue == RETURN_OK)
-				  {
-				  returnValue= rt_queue_bind (&acp220_outputQueue,
-						  	  	  	  	  	  acp220_outputQueueName,
-											  TM_NONBLOCK);
-				  }
+
 				  if (returnValue == RETURN_OK)
 				  {
 					  buffer = malloc(sizeof(*buffer));
@@ -118,14 +119,14 @@ void apc220_read_task_func(void *arg)
 		  //fcntl(fd,F_SETFL,0);
 		  length = read(fd, &buffer, sizeof(buffer));
 
-				if (length <= 0)
+				if (length <= ACK_INPUT_MSG_SIZE)
 				{
 					//fprintf(stderr,"bcounter %d... \r",counter);
 					//counter++;
 				}
 				else
 				{
-
+					//fprintf(stderr,"input: %s\n",buffer);
 					rt_queue_write(&acp220_inputQueue,
 									 &buffer,
 									 sizeof(buffer),
@@ -250,7 +251,7 @@ void apc220_connect_task_func(void *arg)
 		 returnValue = rt_task_create(&apc220_read_task,
 									   "apc220_read_task",
 									   0,
-									   5,
+									   3,
 									   T_JOINABLE);
 	  }
 	  if (returnValue == RETURN_OK)
@@ -258,7 +259,7 @@ void apc220_connect_task_func(void *arg)
 		 returnValue = rt_task_create(&apc220_write_task,
 									   "apc220_write_task",
 									   0,
-									   5,
+									   3,
 									   T_JOINABLE);
 	  }
 
